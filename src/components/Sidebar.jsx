@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import MapManager from './MapManager';
 
-export default function Sidebar({ ideas, onDragStart }) {
+export default function Sidebar({ ideas, onDragStart, onMapChange }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   // Listen for custom events from IdeaCard when dragging
@@ -35,7 +36,7 @@ export default function Sidebar({ ideas, onDragStart }) {
   );
 
   return (
-    <div className={`sidebar-container w-[300px] h-screen overflow-y-auto bg-white shadow-lg p-4 relative transition-all duration-200 ${
+    <div className={`sidebar-container w-[320px] h-screen overflow-y-auto bg-white shadow-lg p-4 relative transition-all duration-200 ${
       isDragOver ? 'bg-blue-50 border-r-4 border-blue-400' : ''
     }`}>
       {/* Drop zone overlay when dragging - only shows when actually dragging a card over sidebar */}
@@ -49,6 +50,12 @@ export default function Sidebar({ ideas, onDragStart }) {
         </div>
       )}
 
+      {/* Map Manager Section */}
+      <div className="mb-4">
+        <MapManager onMapChange={onMapChange} />
+      </div>
+
+      {/* Ideas Section */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold">💡 Ideas</h3>
         <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
@@ -107,6 +114,7 @@ export default function Sidebar({ ideas, onDragStart }) {
       {/* Usage instructions */}
       <div className="mt-6 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
         <p className="font-medium mb-1">💡 Tips:</p>
+        <p>• Create multiple maps for different projects</p>
         <p>• Drag ideas to canvas to visualize</p>
         <p>• Drag canvas cards back here to return</p>
         <p>• Connect related ideas with links</p>
