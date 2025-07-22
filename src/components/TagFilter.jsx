@@ -9,8 +9,25 @@ export default function TagFilter({ onTagSelect, refreshKey }) {
     const loadTags = () => {
       try {
         const ideas = getIdeas().filter(i => !i.archived);
-        const allTags = [...new Set(ideas.flatMap(idea => idea.tags || []))];
-        setTags(allTags.sort());
+        
+        // Collect all tags and normalize to lowercase
+        const allTags = ideas.reduce((tagSet, idea) => {
+          if (idea.tags && Array.isArray(idea.tags)) {
+            idea.tags.forEach(tag => {
+              if (tag && typeof tag === 'string') {
+                // Normalize to lowercase and trim whitespace
+                const normalizedTag = tag.toLowerCase().trim();
+                if (normalizedTag) {
+                  tagSet.add(normalizedTag);
+                }
+              }
+            });
+          }
+          return tagSet;
+        }, new Set());
+        
+        // Convert Set to sorted array
+        setTags(Array.from(allTags).sort());
       } catch (error) {
         console.error('Error loading tags:', error);
         setTags([]);

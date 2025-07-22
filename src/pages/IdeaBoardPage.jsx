@@ -1,19 +1,19 @@
 import { useEffect, useState, useCallback } from "react";
-import { getIdeas, updateIdeas, getActiveMapId } from "../utils/localStorageUtils";
+import { getIdeas, updateIdeas } from "../utils/localStorageUtils";
 import Sidebar from "../components/Sidebar";
 import BoardCanvas from "../components/BoardCanvas";
 
 export default function IdeaBoardPage() {
   const [ideas, setIdeas] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentMapId, setCurrentMapId] = useState(getActiveMapId());
+  const mapId = "default-map";
 
   // Load ideas with error handling
   const loadIdeas = useCallback(() => {
     try {
       setIsLoading(true);
       const saved = getIdeas();
-      console.log('Loaded ideas for map:', currentMapId, saved); // Debug log
+      console.log('Loaded ideas:', saved); // Debug log
       setIdeas(Array.isArray(saved) ? saved : []);
     } catch (error) {
       console.error('Error loading ideas:', error);
@@ -21,31 +21,12 @@ export default function IdeaBoardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentMapId]);
-
-  // Handle map changes
-  const handleMapChange = useCallback((newMapId) => {
-    console.log('Switching to map:', newMapId);
-    setCurrentMapId(newMapId);
-    
-    // Force reload of ideas for the new map
-    setTimeout(() => {
-      loadIdeas();
-    }, 100);
-  }, [loadIdeas]);
+  }, []);
 
   // Initial load
   useEffect(() => {
     loadIdeas();
   }, [loadIdeas]);
-
-  // Refresh when map changes
-  useEffect(() => {
-    const activeMapId = getActiveMapId();
-    if (activeMapId !== currentMapId) {
-      setCurrentMapId(activeMapId);
-    }
-  }, [currentMapId]);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -178,16 +159,13 @@ export default function IdeaBoardPage() {
   console.log('Rendering with:', { 
     totalIdeas: ideas.length, 
     sidebarIdeas: sidebarIdeas.length, 
-    isLoading,
-    currentMapId
+    isLoading 
   }); // Debug log
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-gray-600">
-          Loading ideas for map: {currentMapId}...
-        </div>
+        <div className="text-lg text-gray-600">Loading ideas...</div>
       </div>
     );
   }
@@ -201,7 +179,6 @@ export default function IdeaBoardPage() {
           e.dataTransfer.setData("ideaId", id);
           e.dataTransfer.effectAllowed = "move";
         }}
-        onMapChange={handleMapChange}
       />
       <div 
         className="flex-1 relative"
@@ -214,13 +191,12 @@ export default function IdeaBoardPage() {
         <BoardCanvas
           ideas={ideas} // Pass ALL ideas, not just canvas ideas
           setIdeas={handleSetIdeas}
-          mapId={currentMapId}
+          mapId={mapId}
           onCanvasClick={handleCanvasClick} // Pass the canvas click handler
         />
         
         {/* Debug info - remove this in production */}
         <div className="absolute top-4 right-4 bg-white p-2 rounded shadow text-xs">
-          <div className="font-medium text-blue-600 mb-1">Map: {currentMapId}</div>
           <div>Total: {ideas.length}</div>
           <div>Sidebar: {sidebarIdeas.length}</div>
           <div>Canvas: {ideas.filter(i => i.x !== undefined && i.y !== undefined && !i.archived).length}</div>

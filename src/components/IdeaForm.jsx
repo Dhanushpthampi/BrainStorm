@@ -1,13 +1,110 @@
-import { useState } from "react";
-import { saveIdea, updateIdea } from "../utils/localStorageUtils";
+import { useState, useEffect, useRef } from "react";
+import { saveIdea, updateIdea, getIdeas } from "../utils/localStorageUtils";
 import { useNavigate } from "react-router-dom"; 
 
 export default function IdeaForm({ editMode = false, existingIdea = null, onIdeaAdded }) {
-  const [title, setTitle] = useState(existingIdea?.title || "");
+  const [idea, setIdea] = useState(existingIdea?.title || "");
   const [description, setDescription] = useState(existingIdea?.description || "");
   const [tags, setTags] = useState(existingIdea?.tags?.join(", ") || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [filteredTags, setFilteredTags] = useState([]);
+  const [allTags, setAllTags] = useState([]);
   const navigate = useNavigate();
+  const tagInputRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Load all existing tags on component mount
+  useEffect(() => {
+    const loadExistingTags = () => {
+      try {
+        const ideas = getIdeas();
+        const tagSet = new Set();
+        
+        ideas.forEach(ideaItem => {
+          if (ideaItem.tags && Array.isArray(ideaItem.tags)) {
+            ideaItem.tags.forEach(tag => {
+              if (tag.trim()) {
+                tagSet.add(tag.trim().toLowerCase());
+              }
+            });
+          }
+        });
+        
+        setAllTags(Array.from(tagSet).sort());
+        setFilteredTags(Array.from(tagSet).sort());
+      } catch (error) {
+        console.error('Error loading existing tags:', error);
+      }
+    };
+
+    loadExistingTags();
+  }, []);
+
+  // Handle tag input changes and filtering
+  const handleTagInputChange = (e) => {
+    const value = e.target.value;
+    setTags(value);
+
+    // Get the current word being typed (after the last comma)
+    const lastCommaIndex = value.lastIndexOf(',');
+    const currentTag = value.slice(lastCommaIndex + 1).trim().toLowerCase();
+
+    if (currentTag.length > 0) {
+      // Filter tags based on current input
+      const filtered = allTags.filter(tag => 
+        tag.includes(currentTag) && 
+        !getCurrentTags(value).map(t => t.toLowerCase()).includes(tag)
+      );
+      setFilteredTags(filtered);
+      setShowTagDropdown(filtered.length > 0);
+    } else {
+      // Show all unused tags
+      const currentTagsLower = getCurrentTags(value).map(t => t.toLowerCase());
+      const availableTags = allTags.filter(tag => !currentTagsLower.includes(tag));
+      setFilteredTags(availableTags);
+      setShowTagDropdown(availableTags.length > 0);
+    }
+  };
+
+  // Get currently entered tags
+  const getCurrentTags = (tagString) => {
+    return tagString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+  };
+
+  // Handle tag selection from dropdown
+  const handleTagSelect = (selectedTag) => {
+    const currentTags = tags.split(',').map(tag => tag.trim());
+    
+    // Remove the last incomplete tag and add the selected one
+    const lastCommaIndex = tags.lastIndexOf(',');
+    let newTagsString;
+    
+    if (lastCommaIndex >= 0) {
+      const beforeLastComma = tags.slice(0, lastCommaIndex + 1);
+      newTagsString = beforeLastComma + ' ' + selectedTag + ', ';
+    } else {
+      // If no comma exists, replace the entire input
+      newTagsString = selectedTag + ', ';
+    }
+    
+    setTags(newTagsString);
+    setShowTagDropdown(false);
+    tagInputRef.current?.focus();
+  };
+
+  // Handle clicks outside dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target) &&
+          tagInputRef.current && !tagInputRef.current.contains(event.target)) {
+        setShowTagDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,8 +113,8 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
     try {
       const ideaData = {
         id: editMode ? existingIdea.id : crypto.randomUUID(),
-        title: title.trim(),
-        description: description.trim(),
+        title: idea.trim(), // Keep as 'title' for backend storage
+        description: description.trim() || "", // Make optional, empty string if not provided
         tags: tags.split(",").map((tag) => tag.trim()).filter(tag => tag.length > 0),
         createdAt: editMode ? existingIdea.createdAt : new Date().toISOString(),
         archived: false,
@@ -30,7 +127,7 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
       }
 
       // Clear form
-      setTitle("");
+      setIdea("");
       setDescription("");
       setTags("");
 
@@ -60,13 +157,13 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Idea Title *
+            Your Idea *
           </label>
           <input
             type="text"
-            placeholder="What's your brilliant idea?"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter your brilliant idea..."
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
             className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
             required
             maxLength={100}
@@ -75,30 +172,70 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Description *
+            Description <span className="text-gray-500 font-normal">(optional)</span>
           </label>
           <textarea
-            placeholder="Describe your idea in detail..."
+            placeholder="Describe your idea in detail... (optional)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-blue-500 focus:outline-none transition-colors min-h-[120px]"
-            required
           />
         </div>
 
-        <div>
+        <div className="relative">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Tags
           </label>
           <input
+            ref={tagInputRef}
             type="text"
             placeholder="e.g. technology, business, creative (comma separated)"
             value={tags}
-            onChange={(e) => setTags(e.target.value)}
+            onChange={handleTagInputChange}
+            onFocus={() => {
+              if (allTags.length > 0) {
+                const currentTagsLower = getCurrentTags(tags).map(t => t.toLowerCase());
+                const availableTags = allTags.filter(tag => !currentTagsLower.includes(tag));
+                setFilteredTags(availableTags);
+                setShowTagDropdown(availableTags.length > 0);
+              }
+            }}
             className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+            autoComplete="off"
           />
+          
+          {/* Tag Dropdown */}
+          {showTagDropdown && (
+            <div 
+              ref={dropdownRef}
+              className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+            >
+              {filteredTags.length > 0 ? (
+                <>
+                  <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-b">
+                    Previous tags ({filteredTags.length})
+                  </div>
+                  {filteredTags.map((tag, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handleTagSelect(tag)}
+                      className="w-full px-3 py-2 text-left hover:bg-blue-50 hover:text-blue-700 transition-colors capitalize border-b border-gray-100 last:border-b-0"
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </>
+              ) : (
+                <div className="px-3 py-2 text-sm text-gray-500">
+                  No matching tags found
+                </div>
+              )}
+            </div>
+          )}
+          
           <p className="text-sm text-gray-500 mt-1">
-            Separate tags with commas to help organize your ideas
+            Separate tags with commas. Click on the input to see previous tags.
           </p>
         </div>
 
@@ -119,7 +256,7 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
             >
               Cancel
             </button>
-          )}
+            )}
         </div>
       </form>
     </div>
