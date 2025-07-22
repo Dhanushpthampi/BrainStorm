@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { getLinks, saveLinks } from "../utils/localStorageUtils";
-import IdeaCard from "./IdeaCard"; // Make sure the path is correct
+import IdeaCard from "./IdeaCard";
 
 export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
   const [selectedIds, setSelectedIds] = useState([]);
@@ -11,12 +11,36 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
   const [isLinked, setIsLinked] = useState(false);
   const containerRef = useRef(null);
 
+  // Card dimensions - adjust these if your cards have different sizes
+  const CARD_WIDTH = 200;
+  const CARD_HEIGHT = 100; // Approximate height, adjust as needed
+
+  // Function to calculate connection points on card edges
+  const getConnectionPoint = (fromCard, toCard) => {
+    const fromCenterX = fromCard.x + CARD_WIDTH / 2;
+    const fromCenterY = fromCard.y + CARD_HEIGHT / 2;
+    const toCenterX = toCard.x + CARD_WIDTH / 2;
+    const toCenterY = toCard.y + CARD_HEIGHT / 2;
+
+    // Calculate angle between card centers
+    const angle = Math.atan2(toCenterY - fromCenterY, toCenterX - fromCenterX);
+    
+    // Calculate connection points on card edges
+    const fromX = fromCenterX + Math.cos(angle) * (CARD_WIDTH / 2);
+    const fromY = fromCenterY + Math.sin(angle) * (CARD_HEIGHT / 2);
+    
+    const toX = toCenterX - Math.cos(angle) * (CARD_WIDTH / 2);
+    const toY = toCenterY - Math.sin(angle) * (CARD_HEIGHT / 2);
+
+    return { fromX, fromY, toX, toY };
+  };
+
   // Load links from localStorage on mount and when mapId changes
   const loadLinks = useCallback(() => {
     try {
       setIsLoadingLinks(true);
       const savedLinks = getLinks();
-      console.log('Loading links:', savedLinks); // Debug log
+      console.log('Loading links:', savedLinks);
       setLinks(Array.isArray(savedLinks) ? savedLinks : []);
     } catch (error) {
       console.error('Error loading links:', error);
@@ -33,13 +57,11 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
 
   // Persist links to localStorage whenever links change
   useEffect(() => {
-    if (isLoadingLinks) return; // Don't save during initial load
+    if (isLoadingLinks) return;
     
     try {
-      console.log('Saving links:', links); // Debug log
+      console.log('Saving links:', links);
       saveLinks(links);
-      
-      // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent('linksUpdated', { detail: links }));
     } catch (error) {
       console.error('Error saving links:', error);
@@ -49,12 +71,12 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
   // Listen for storage changes from other tabs/components
   useEffect(() => {
     const onStorageChange = () => {
-      console.log('Storage changed, reloading links...'); // Debug log
+      console.log('Storage changed, reloading links...');
       loadLinks();
     };
     
     const onLinksUpdate = (event) => {
-      console.log('Links updated event received:', event.detail); // Debug log
+      console.log('Links updated event received:', event.detail);
       if (event.detail && Array.isArray(event.detail)) {
         setLinks(event.detail);
       }
@@ -77,7 +99,7 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
       } else {
         newSelection = [...prev, id];
         if (newSelection.length > 2) {
-          newSelection = newSelection.slice(-2); // Keep only last 2
+          newSelection = newSelection.slice(-2);
         }
       }
       return newSelection;
@@ -92,12 +114,10 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
       const idea2 = ideas.find(idea => idea.id === id2);
       
       if (idea1 && idea2 && idea1.x !== undefined && idea2.x !== undefined) {
-        // Calculate popup position (midpoint between the two cards)
         const midX = (idea1.x + idea2.x) / 2 + 100;
         const midY = (idea1.y + idea2.y) / 2 + 40;
         setPopupPosition({ x: midX, y: midY });
         
-        // Check if they're already linked
         const linkExists = links.some(l => 
           (l.from === id1 && l.to === id2) || (l.from === id2 && l.to === id1)
         );
@@ -134,36 +154,60 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
     }
   };
 
-  // FIXED: Proper drag handler that ensures setIdeas gets an updater function
-  const handleDrag = useCallback((newX, newY, id) => {
-    console.log(`Dragging idea ${id} to (${newX}, ${newY})`);
+  // Enhanced drag handler that detects sidebar drop zone
+  const handleDrag = useCallback((newX, newY, id, isOverSidebar = false) => {
+    console.log(`Dragging idea ${id} to (${newX}, ${newY}), over sidebar: ${isOverSidebar}`);
     
-    setIdeas((prevIdeas) => {
-      // Validate that prevIdeas is an array
-      if (!Array.isArray(prevIdeas)) {
-        console.error('prevIdeas is not an array:', prevIdeas);
-        return prevIdeas; // Return unchanged if not an array
-      }
+    // Only return to sidebar if explicitly over the sidebar area
+    if (isOverSidebar) {
+      // Return card to sidebar by removing its position
+      console.log(`Returning card ${id} to sidebar`);
+      setIdeas((prevIdeas) => {
+        if (!Array.isArray(prevIdeas)) {
+          console.error('prevIdeas is not an array:', prevIdeas);
+          return prevIdeas;
+        }
+        
+        return prevIdeas.map((idea) =>
+          idea.id === id 
+            ? { ...idea, x: undefined, y: undefined }
+            : idea
+        );
+      });
       
-      return prevIdeas.map((idea) =>
-        idea.id === id 
-          ? { ...idea, x: newX, y: newY } 
-          : idea
+      // Remove any links connected to this card
+      setLinks(prevLinks => 
+        prevLinks.filter(link => link.from !== id && link.to !== id)
       );
-    });
-  }, [setIdeas]);
+      
+      // Remove from selection if selected
+      setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+      
+    } else {
+      // Normal drag behavior
+      setIdeas((prevIdeas) => {
+        if (!Array.isArray(prevIdeas)) {
+          console.error('prevIdeas is not an array:', prevIdeas);
+          return prevIdeas;
+        }
+        
+        return prevIdeas.map((idea) =>
+          idea.id === id 
+            ? { ...idea, x: newX, y: newY } 
+            : idea
+        );
+      });
+    }
+  }, [setIdeas, setLinks]);
 
   // Handle click on empty canvas to place cards
   const handleCanvasClick = (e) => {
-    // Only handle clicks on the canvas itself, not on cards
     if (e.target === e.currentTarget) {
       const rect = e.currentTarget.getBoundingClientRect();
       
-      // Call the parent's canvas click handler if provided
       if (onCanvasClick) {
         onCanvasClick(e, rect);
       } else {
-        // Fallback logic if no handler provided
         const x = e.clientX - rect.left - 100;
         const y = e.clientY - rect.top - 40;
         
@@ -176,7 +220,6 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
         if (unplacedIdea) {
           console.log(`Placing idea ${unplacedIdea.id} at (${Math.max(0, x)}, ${Math.max(0, y)})`);
           setIdeas(prev => {
-            // Validate that prev is an array
             if (!Array.isArray(prev)) {
               console.error('prev is not an array in handleCanvasClick:', prev);
               return prev;
@@ -256,7 +299,7 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
       className="relative w-full h-screen bg-gray-100 overflow-hidden cursor-crosshair"
       onClick={handleCanvasClick}
     >
-      {/* Links */}
+      {/* Links with edge connections */}
       <svg className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none">
         {links.map((link, idx) => {
           const from = getIdeaById(link.from);
@@ -267,13 +310,16 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
             return null;
           }
           
+          // Get edge connection points
+          const { fromX, fromY, toX, toY } = getConnectionPoint(from, to);
+          
           return (
             <g key={`${link.from}-${link.to}-${idx}`}>
               <line
-                x1={from.x + 100}
-                y1={from.y + 40}
-                x2={to.x + 100}
-                y2={to.y + 40}
+                x1={fromX}
+                y1={fromY}
+                x2={toX}
+                y2={toY}
                 stroke="#374151"
                 strokeWidth="2"
                 strokeOpacity="0.6"
@@ -281,8 +327,8 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
               />
               {/* Clickable area for removing links */}
               <circle
-                cx={(from.x + to.x) / 2 + 100}
-                cy={(from.y + to.y) / 2 + 40}
+                cx={(fromX + toX) / 2}
+                cy={(fromY + toY) / 2}
                 r="10"
                 fill="red"
                 fillOpacity="0.7"
@@ -291,8 +337,8 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
                 title="Click to remove link"
               />
               <text
-                x={(from.x + to.x) / 2 + 100}
-                y={(from.y + to.y) / 2 + 40}
+                x={(fromX + toX) / 2}
+                y={(fromY + toY) / 2}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize="8"
@@ -342,7 +388,7 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
         <div
           className="link-popup absolute z-50 bg-white rounded-lg shadow-lg border-2 border-gray-200 p-3"
           style={{
-            left: popupPosition.x - 60, // Center the popup
+            left: popupPosition.x - 60,
             top: popupPosition.y - 50,
             transform: 'translateX(-50%)'
           }}
@@ -367,7 +413,6 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
               </button>
             )}
           </div>
-          {/* Small arrow pointing down */}
           <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-200"></div>
         </div>
       )}
@@ -379,6 +424,7 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
         <p>• Click cards to select them</p>
         <p>• Select 2 cards to show link/unlink button</p>
         <p>• Drag cards to move them around</p>
+        <p>• <span className="font-medium text-blue-600">Drag cards over sidebar to return them</span></p>
         <p>• Click red ✕ on links to remove them</p>
         
         {selectedIds.length > 0 && (
@@ -387,7 +433,6 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
           </p>
         )}
         
-        {/* Debug info - remove in production */}
         <div className="mt-2 text-xs text-gray-400 border-t pt-2">
           <div>Links: {links.length}</div>
           <div>Canvas Ideas: {ideas.filter(i => i.x !== undefined && i.y !== undefined).length}</div>
