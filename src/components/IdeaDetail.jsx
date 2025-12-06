@@ -46,9 +46,9 @@ export default function IdeaDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="min-h-screen bg-gray-50">
         <div className="max-w-4xl mx-auto pt-10 px-4">
-          <div className="bg-white rounded-xl shadow-lg p-8 animate-pulse">
+          <div className="bg-white rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-8 animate-pulse">
             <div className="h-4 bg-gray-300 rounded mb-6 w-24"></div>
             <div className="h-8 bg-gray-300 rounded mb-6"></div>
             <div className="h-20 bg-gray-300 rounded mb-6"></div>
@@ -65,12 +65,12 @@ export default function IdeaDetail() {
 
   if (!idea) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Idea Not Found</h2>
           <button 
             onClick={() => navigate("/")}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-bold"
           >
             Go Home
           </button>
@@ -80,21 +80,21 @@ export default function IdeaDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50 pb-10">
       <div className="max-w-4xl mx-auto pt-8 px-4">
         <button 
           onClick={() => navigate("/")}
-          className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors font-medium px-4 py-2 rounded-lg hover:bg-white/50"
+          className="mb-6 flex items-center gap-2 text-gray-600 hover:text-black transition-colors font-bold px-4 py-2 rounded-lg hover:bg-gray-200"
         >
           ← Back to Ideas
         </button>
         
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8">
+          <div className="bg-gradient-to-r from-orange-400 to-yellow-400 border-b-2 border-black text-black p-8">
             <h1 className="text-4xl font-bold mb-2">{idea.title}</h1>
             {idea.createdAt && (
-              <p className="text-blue-100 text-sm">
+              <p className="text-black/70 text-sm font-medium">
                 Created on {new Date(idea.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -107,7 +107,7 @@ export default function IdeaDetail() {
           {/* Content */}
           <div className="p-8">
             <div className="prose max-w-none mb-8">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Description</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-3">Description</h3>
               <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
                 {idea.description}
               </p>
@@ -115,12 +115,12 @@ export default function IdeaDetail() {
             
             {idea.tags && idea.tags.length > 0 && (
               <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Tags</h3>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Tags</h3>
                 <div className="flex flex-wrap gap-3">
                   {idea.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium border border-blue-200"
+                      className="bg-gray-100 text-gray-800 px-4 py-2 rounded-full text-sm font-bold border border-black"
                     >
                       #{tag}
                     </span>
@@ -130,24 +130,24 @@ export default function IdeaDetail() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-4 pt-6 border-t border-gray-200">
+            <div className="flex flex-wrap gap-4 pt-6 border-t-2 border-gray-100">
               <button 
                 onClick={() => navigate(`/edit/${id}`)} 
-                className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-black border-2 border-black rounded-lg transition-all duration-200 font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-none"
               >
                 ✏️ Edit Idea
               </button>
               
               <button 
                 onClick={handleArchive} 
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-black border-2 border-black rounded-lg transition-all duration-200 font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-none"
               >
                 📁 Archive
               </button>
               
               <button 
                 onClick={handleDelete} 
-                className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 text-white border-2 border-black rounded-lg transition-all duration-200 font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-none"
               >
                 🗑️ Delete
               </button>
@@ -156,14 +156,14 @@ export default function IdeaDetail() {
         </div>
 
         {/* Related Ideas Section - Placeholder */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">💡 Tip</h3>
+        <div className="mt-8 bg-white rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">💡 Tip</h3>
           <p className="text-gray-600">
             Use the <strong>Idea Board</strong> to visually connect this idea with others and discover new relationships between your thoughts!
           </p>
           <button
             onClick={() => navigate('/board')}
-            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            className="mt-3 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-bold"
           >
             Open Idea Board
           </button>

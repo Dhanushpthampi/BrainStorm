@@ -120,14 +120,14 @@ export default function MapManager({ onMapChange }) {
       {/* Current Map Display */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium text-gray-700">📊 Current Map:</span>
-          <span className="text-sm font-bold text-blue-600">
+          <span className="text-sm font-bold text-gray-700">📊 Current Map:</span>
+          <span className="text-sm font-bold text-black border-b-2 border-yellow-400">
             {maps[activeMapId]?.name || 'Default Map'}
           </span>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full transition-colors"
+          className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full transition-colors font-bold border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
           title="Create new map"
         >
           + New Map
@@ -135,21 +135,21 @@ export default function MapManager({ onMapChange }) {
       </div>
 
       {/* Maps List */}
-      <div className="space-y-1 max-h-32 overflow-y-auto">
+      <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
         {Object.entries(maps).map(([mapId, map]) => (
           <div
             key={mapId}
-            className={`flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
+            className={`flex items-center justify-between p-2 rounded-lg text-sm transition-colors border ${
               mapId === activeMapId
-                ? 'bg-blue-100 border border-blue-300'
-                : 'bg-gray-50 hover:bg-gray-100'
+                ? 'bg-yellow-50 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                : 'bg-white border-gray-200 hover:border-black'
             }`}
           >
             <button
               onClick={() => handleSwitchMap(mapId)}
               className="flex-1 text-left"
             >
-              <div className="font-medium truncate">{map.name}</div>
+              <div className="font-bold truncate text-gray-800">{map.name}</div>
               <div className="text-xs text-gray-500">
                 {map.ideas?.length || 0} ideas • {map.links?.length || 0} links
               </div>
@@ -159,7 +159,7 @@ export default function MapManager({ onMapChange }) {
               <div className="flex items-center space-x-1 ml-2">
                 <button
                   onClick={() => startRename(mapId, map.name)}
-                  className="text-gray-400 hover:text-blue-500 p-1"
+                  className="text-gray-400 hover:text-black p-1"
                   title="Rename map"
                 >
                   ✏️
@@ -180,14 +180,14 @@ export default function MapManager({ onMapChange }) {
       {/* Create Map Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
-            <h3 className="text-lg font-semibold mb-4">Create New Map</h3>
+          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <h3 className="text-lg font-bold mb-4">Create New Map</h3>
             <input
               type="text"
               value={newMapName}
               onChange={(e) => setNewMapName(e.target.value)}
               placeholder="Enter map name..."
-              className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border-2 border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-black"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleCreateMap();
                 if (e.key === 'Escape') setShowCreateModal(false);
@@ -200,14 +200,14 @@ export default function MapManager({ onMapChange }) {
                   setShowCreateModal(false);
                   setNewMapName('');
                 }}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-gray-600 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-bold"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateMap}
                 disabled={!newMapName.trim()}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
               >
                 Create Map
               </button>
@@ -219,14 +219,14 @@ export default function MapManager({ onMapChange }) {
       {/* Rename Map Modal */}
       {showRenameModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
-            <h3 className="text-lg font-semibold mb-4">Rename Map</h3>
+          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <h3 className="text-lg font-bold mb-4">Rename Map</h3>
             <input
               type="text"
               value={renameMapName}
               onChange={(e) => setRenameMapName(e.target.value)}
               placeholder="Enter new map name..."
-              className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border-2 border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-black"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleRenameMap();
                 if (e.key === 'Escape') setShowRenameModal(false);
@@ -240,14 +240,14 @@ export default function MapManager({ onMapChange }) {
                   setRenameMapName('');
                   setRenameMapId(null);
                 }}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-gray-600 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-bold"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRenameMap}
                 disabled={!renameMapName.trim()}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
               >
                 Rename
               </button>

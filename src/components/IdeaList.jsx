@@ -6,15 +6,15 @@ const GridCard = ({ idea }) => {
   const navigate = useNavigate();
   return (
     <div 
-      className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:border-blue-200 bg-gradient-to-br from-white to-gray-50"
+      className="bg-white border border-gray-300 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:border-black"
       onClick={() => navigate(`/idea/${idea.id}`)}
     >
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
+        <h3 className="text-xl font-bold text-gray-800 group-hover:text-black transition-colors line-clamp-2 leading-tight">
           {idea.title}
         </h3>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-2">
-          <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </div>
@@ -31,13 +31,13 @@ const GridCard = ({ idea }) => {
           {idea.tags.slice(0, 3).map((tag, index) => (
             <span
               key={index}
-              className="text-xs bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 px-3 py-1 rounded-full font-medium border border-blue-200"
+              className="text-xs bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-medium border border-gray-300"
             >
               #{tag}
             </span>
           ))}
           {idea.tags.length > 3 && (
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full border border-gray-200">
               +{idea.tags.length - 3} more
             </span>
           )}
@@ -58,7 +58,7 @@ const GridCard = ({ idea }) => {
             e.stopPropagation();
             navigate(`/idea/${idea.id}`);
           }}
-          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md opacity-0 group-hover:opacity-100"
+          className="px-4 py-2 bg-gradient-to-r from-orange-400 to-yellow-400 text-black text-sm rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-none transition-all duration-200 font-bold opacity-0 group-hover:opacity-100"
         >
           View Details
         </button>
@@ -71,13 +71,13 @@ const ListItem = ({ idea }) => {
   const navigate = useNavigate();
   return (
     <div 
-      className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-blue-200 bg-gradient-to-r from-white to-gray-50"
+      className="bg-white border border-gray-300 rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-black"
       onClick={() => navigate(`/idea/${idea.id}`)}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-4 mb-3">
-            <h3 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
+            <h3 className="text-xl font-bold text-gray-800 group-hover:text-black transition-colors truncate">
               {idea.title}
             </h3>
             <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
@@ -100,13 +100,13 @@ const ListItem = ({ idea }) => {
               {idea.tags.slice(0, 5).map((tag, index) => (
                 <span
                   key={index}
-                  className="text-xs bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 px-3 py-1 rounded-full font-medium border border-blue-200"
+                  className="text-xs bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-medium border border-gray-300"
                 >
                   #{tag}
                 </span>
               ))}
               {idea.tags.length > 5 && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full border border-gray-200">
                   +{idea.tags.length - 5} more
                 </span>
               )}
@@ -120,11 +120,11 @@ const ListItem = ({ idea }) => {
               e.stopPropagation();
               navigate(`/idea/${idea.id}`);
             }}
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md opacity-0 group-hover:opacity-100"
+            className="px-4 py-2 bg-gradient-to-r from-orange-400 to-yellow-400 text-black text-sm rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-none transition-all duration-200 font-bold opacity-0 group-hover:opacity-100"
           >
             View Details
           </button>
-          <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </div>
@@ -166,7 +166,7 @@ export default function IdeaList() {
   if (filtered.length === 0) {
     return (
       <div className="max-w-7xl mx-auto p-6">
-        <div className="text-center py-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+        <div className="text-center py-16 bg-white rounded-2xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
           <div className="text-8xl mb-6 opacity-60">💡</div>
           <h3 className="text-2xl font-bold text-gray-800 mb-3">
             {selectedTag ? `No ideas tagged with "${selectedTag}"` : "No ideas yet"}
@@ -177,14 +177,14 @@ export default function IdeaList() {
           {selectedTag ? (
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('clearTagFilter'))}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="px-6 py-3 bg-gradient-to-r from-orange-400 to-yellow-400 text-black rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all duration-200 font-bold"
             >
               Clear Filter
             </button>
           ) : (
             <button
               onClick={() => navigate('/add')}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="px-6 py-3 bg-gradient-to-r from-orange-400 to-yellow-400 text-black rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all duration-200 font-bold"
             >
               Add Your First Idea
             </button>
@@ -202,7 +202,7 @@ export default function IdeaList() {
           <h2 className="text-3xl font-bold text-gray-800 mb-2">
             {selectedTag ? (
               <span>
-                Ideas tagged with <span className="text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">#{selectedTag}</span>
+                Ideas tagged with <span className="text-black bg-yellow-200 px-2 py-1 rounded-lg border border-black">#{selectedTag}</span>
               </span>
             ) : (
               `Your Ideas`
@@ -214,13 +214,13 @@ export default function IdeaList() {
         </div>
         
         {/* View Toggle */}
-        <div className="flex items-center bg-white border border-gray-300 rounded-xl p-1 shadow-sm">
+        <div className="flex items-center bg-white border-2 border-black rounded-xl p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
           <button
             onClick={() => setViewMode('grid')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-bold ${
               viewMode === 'grid'
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                ? 'bg-black text-white'
+                : 'text-gray-600 hover:text-black hover:bg-gray-100'
             }`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -230,10 +230,10 @@ export default function IdeaList() {
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-bold ${
               viewMode === 'list'
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                ? 'bg-black text-white'
+                : 'text-gray-600 hover:text-black hover:bg-gray-100'
             }`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

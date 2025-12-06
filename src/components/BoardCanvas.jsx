@@ -187,11 +187,11 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
       }}
     >
       {/* Zoom Controls */}
-      <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 bg-white rounded-lg shadow-lg border p-2">
-        <button onClick={zoomIn} className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded text-lg font-bold flex items-center justify-center transition-colors">+</button>
-        <div className="text-xs text-center text-gray-600 px-1">{Math.round(zoom * 100)}%</div>
-        <button onClick={zoomOut} className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded text-lg font-bold flex items-center justify-center transition-colors">−</button>
-        <button onClick={resetZoom} className="w-8 h-8 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-bold flex items-center justify-center transition-colors">⌂</button>
+      <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-2">
+        <button onClick={zoomIn} className="w-8 h-8 bg-black text-white rounded text-lg font-bold flex items-center justify-center hover:bg-gray-800 transition-colors active:translate-y-0.5">+</button>
+        <div className="text-xs text-center font-bold text-gray-800 px-1">{Math.round(zoom * 100)}%</div>
+        <button onClick={zoomOut} className="w-8 h-8 bg-black text-white rounded text-lg font-bold flex items-center justify-center hover:bg-gray-800 transition-colors active:translate-y-0.5">−</button>
+        <button onClick={resetZoom} className="w-8 h-8 bg-gray-200 hover:bg-gray-300 text-black rounded text-xs font-bold flex items-center justify-center transition-colors active:translate-y-0.5">⌂</button>
       </div>
 
       {/* Canvas Content */}
@@ -215,24 +215,24 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
             
             return (
               <g key={`${link.from}-${link.to}-${idx}`}>
-                <line x1={fromX} y1={fromY} x2={toX} y2={toY} stroke="#374151" strokeWidth="2" strokeOpacity="0.6" markerEnd="url(#arrowhead)" />
+                <line x1={fromX} y1={fromY} x2={toX} y2={toY} stroke="#000000" strokeWidth="2" strokeOpacity="0.8" markerEnd="url(#arrowhead)" />
                 <circle
                   cx={(fromX + toX) / 2}
                   cy={(fromY + toY) / 2}
                   r="10"
-                  fill="red"
-                  fillOpacity="0.7"
-                  className="cursor-pointer pointer-events-auto hover:fill-opacity-90"
+                  fill="#ef4444"
+                  fillOpacity="1"
+                  className="cursor-pointer pointer-events-auto hover:fill-red-600 transition-colors"
                   onClick={() => handleRemoveLinkFromDot(link)}
                   title="Click to remove link"
                 />
-                <text x={(fromX + toX) / 2} y={(fromY + toY) / 2} textAnchor="middle" dominantBaseline="middle" fontSize="8" fill="white" className="pointer-events-none">✕</text>
+                <text x={(fromX + toX) / 2} y={(fromY + toY) / 2} textAnchor="middle" dominantBaseline="middle" fontSize="8" fill="white" fontWeight="bold" className="pointer-events-none">✕</text>
               </g>
             );
           })}
           <defs>
             <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill="#374151" fillOpacity="0.6" />
+              <polygon points="0 0, 10 3.5, 0 7" fill="#000000" fillOpacity="0.8" />
             </marker>
           </defs>
         </svg>
@@ -255,28 +255,28 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
       {/* Link Popup */}
       {showLinkPopup && (
         <div
-          className="link-popup absolute z-50 bg-white rounded-lg shadow-lg border-2 border-gray-200 p-3"
+          className="link-popup absolute z-50 bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-3"
           style={{ left: popupPosition.x - 60, top: popupPosition.y - 50, transform: 'translateX(-50%)' }}
         >
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2">{selectedIds.length} cards selected</p>
+            <p className="text-sm font-bold text-gray-800 mb-2">{selectedIds.length} cards selected</p>
             {isLinked ? (
-              <button onClick={handleRemoveLink} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">🔗 Unlink Cards</button>
+              <button onClick={handleRemoveLink} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all">🔗 Unlink Cards</button>
             ) : (
-              <button onClick={handleCreateLink} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">🔗 Link Cards</button>
+              <button onClick={handleCreateLink} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-bold border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all">🔗 Link Cards</button>
             )}
           </div>
-          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-200"></div>
+          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
         </div>
       )}
 
       {/* Instructions */}
-      <div className="absolute bottom-4 left-4 p-3 text-sm bg-white rounded-lg shadow-md text-gray-600 max-w-xs">
-        <p className="font-medium mb-1">How to use:</p>
+      <div className="absolute bottom-4 left-4 p-3 text-sm bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-gray-800 max-w-xs">
+        <p className="font-bold mb-1">How to use:</p>
         <p>• Drag cards from sidebar to canvas</p>
         <p>• Select 2 cards to link/unlink</p>
-        <p>• <span className="font-medium text-blue-600">Drag over sidebar to remove</span></p>
-        <p>• <span className="font-medium text-green-600">Ctrl + Scroll to zoom, Alt + Drag to pan</span></p>
+        <p>• <span className="font-bold text-blue-600">Drag over sidebar to remove</span></p>
+        <p>• <span className="font-bold text-green-600">Ctrl + Scroll to zoom, Alt + Drag to pan</span></p>
       </div>
     </div>
   );

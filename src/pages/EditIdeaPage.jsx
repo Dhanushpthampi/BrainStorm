@@ -24,9 +24,9 @@ export default function EditIdeaPage() {
   if (!ideaToEdit) {
     return (
       <div className="p-6 text-center text-red-600">
-        <p>Idea not found 😕</p>
+        <p className="text-xl font-bold mb-4">Idea not found 😕</p>
         <button
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+          className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
           onClick={() => navigate("/")}
         >
           Go Home
@@ -37,7 +37,6 @@ export default function EditIdeaPage() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Edit Idea</h2>
       <IdeaForm editMode={true} existingIdea={ideaToEdit} />
     </div>
   );

@@ -6,105 +6,41 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
   const { addIdea, updateIdea, ideas } = useIdeas();
   const [idea, setIdea] = useState(existingIdea?.title || "");
   const [description, setDescription] = useState(existingIdea?.description || "");
-  const [tags, setTags] = useState(existingIdea?.tags?.join(", ") || "");
+  
+  // Safely initialize tags from array or string
+  const [tags, setTags] = useState(() => {
+    if (!existingIdea?.tags) return [];
+    return Array.isArray(existingIdea.tags) 
+      ? existingIdea.tags 
+      : String(existingIdea.tags).split(',').map(t => t.trim()).filter(Boolean);
+  });
+
+  const [tagInput, setTagInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
-  const [filteredTags, setFilteredTags] = useState([]);
-  const [allTags, setAllTags] = useState([]);
+  const [showDescription, setShowDescription] = useState(!!existingIdea?.description);
   const navigate = useNavigate();
-  const tagInputRef = useRef(null);
-  const dropdownRef = useRef(null);
 
-  // Load all existing tags
-  useEffect(() => {
-    const loadExistingTags = () => {
-      try {
-        const tagSet = new Set();
-        
-        ideas.forEach(ideaItem => {
-          if (ideaItem.tags && Array.isArray(ideaItem.tags)) {
-            ideaItem.tags.forEach(tag => {
-              if (tag.trim()) {
-                tagSet.add(tag.trim().toLowerCase());
-              }
-            });
-          }
-        });
-        
-        setAllTags(Array.from(tagSet).sort());
-        setFilteredTags(Array.from(tagSet).sort());
-      } catch (error) {
-        console.error('Error loading existing tags:', error);
+  // Handle tag input keydown
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+      e.preventDefault();
+      const newTag = tagInput.trim();
+      if (newTag && !tags.includes(newTag)) {
+        setTags([...tags, newTag]);
+        setTagInput("");
       }
-    };
-
-    loadExistingTags();
-  }, [ideas]);
-
-  // Handle tag input changes and filtering
-  const handleTagInputChange = (e) => {
-    const value = e.target.value;
-    setTags(value);
-
-    // Get the current word being typed (after the last comma)
-    const lastCommaIndex = value.lastIndexOf(',');
-    const currentTag = value.slice(lastCommaIndex + 1).trim().toLowerCase();
-
-    if (currentTag.length > 0) {
-      // Filter tags based on current input
-      const filtered = allTags.filter(tag => 
-        tag.includes(currentTag) && 
-        !getCurrentTags(value).map(t => t.toLowerCase()).includes(tag)
-      );
-      setFilteredTags(filtered);
-      setShowTagDropdown(filtered.length > 0);
-    } else {
-      // Show all unused tags
-      const currentTagsLower = getCurrentTags(value).map(t => t.toLowerCase());
-      const availableTags = allTags.filter(tag => !currentTagsLower.includes(tag));
-      setFilteredTags(availableTags);
-      setShowTagDropdown(availableTags.length > 0);
+    } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+      setTags(tags.slice(0, -1));
     }
   };
 
-  // Get currently entered tags
-  const getCurrentTags = (tagString) => {
-    return tagString.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+  const removeTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  // Handle tag selection from dropdown
-  const handleTagSelect = (selectedTag) => {
-    const currentTags = tags.split(',').map(tag => tag.trim());
-    
-    // Remove the last incomplete tag and add the selected one
-    const lastCommaIndex = tags.lastIndexOf(',');
-    let newTagsString;
-    
-    if (lastCommaIndex >= 0) {
-      const beforeLastComma = tags.slice(0, lastCommaIndex + 1);
-      newTagsString = beforeLastComma + ' ' + selectedTag + ', ';
-    } else {
-      // If no comma exists, replace the entire input
-      newTagsString = selectedTag + ', ';
-    }
-    
-    setTags(newTagsString);
-    setShowTagDropdown(false);
-    tagInputRef.current?.focus();
+  const handleAthenaSuggest = () => {
+    alert("Feature coming soon!");
   };
-
-  // Handle clicks outside dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target) &&
-          tagInputRef.current && !tagInputRef.current.contains(event.target)) {
-        setShowTagDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,7 +51,7 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
         id: editMode ? existingIdea.id : crypto.randomUUID(),
         title: idea.trim(),
         description: description.trim() || "",
-        tags: tags.split(",").map((tag) => tag.trim()).filter(tag => tag.length > 0),
+        tags: tags,
         createdAt: editMode ? existingIdea.createdAt : new Date().toISOString(),
         archived: false,
       };
@@ -129,7 +65,9 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
       // Clear form
       setIdea("");
       setDescription("");
-      setTags("");
+      setTags([]);
+      setTagInput("");
+      setShowDescription(false);
 
       // Notify parent component to refresh
       if (onIdeaAdded) {
@@ -149,14 +87,14 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg mb-6">
+    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">
         {editMode ? "✏️ Edit Idea" : "💡 Add New Idea"}
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-gray-700 mb-2">
             Your Idea *
           </label>
           <input
@@ -164,86 +102,80 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
             placeholder="Enter your brilliant idea..."
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
-            className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+            className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-black focus:outline-none transition-colors"
             required
             maxLength={100}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Description <span className="text-gray-500 font-normal">(optional)</span>
-          </label>
-          <textarea
-            placeholder="Describe your idea in detail... (optional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-blue-500 focus:outline-none transition-colors min-h-[120px]"
-          />
-        </div>
-
-        <div className="relative">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Tags
-          </label>
-          <input
-            ref={tagInputRef}
-            type="text"
-            placeholder="e.g. technology, business, creative (comma separated)"
-            value={tags}
-            onChange={handleTagInputChange}
-            onFocus={() => {
-              if (allTags.length > 0) {
-                const currentTagsLower = getCurrentTags(tags).map(t => t.toLowerCase());
-                const availableTags = allTags.filter(tag => !currentTagsLower.includes(tag));
-                setFilteredTags(availableTags);
-                setShowTagDropdown(availableTags.length > 0);
-              }
-            }}
-            className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
-            autoComplete="off"
-          />
-          
-          {/* Tag Dropdown */}
-          {showTagDropdown && (
-            <div 
-              ref={dropdownRef}
-              className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+          <div className="flex items-center gap-4 mb-2">
+            {!showDescription && (
+              <button
+                type="button"
+                onClick={() => setShowDescription(true)}
+                className="text-sm font-bold text-blue-600 hover:text-blue-800 underline"
+              >
+                + Add Description
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleAthenaSuggest}
+              className="text-sm font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1"
             >
-              {filteredTags.length > 0 ? (
-                <>
-                  <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 border-b">
-                    Previous tags ({filteredTags.length})
-                  </div>
-                  {filteredTags.map((tag, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => handleTagSelect(tag)}
-                      className="w-full px-3 py-2 text-left hover:bg-blue-50 hover:text-blue-700 transition-colors capitalize border-b border-gray-100 last:border-b-0"
-                    >
-                      #{tag}
-                    </button>
-                  ))}
-                </>
-              ) : (
-                <div className="px-3 py-2 text-sm text-gray-500">
-                  No matching tags found
-                </div>
-              )}
+              ✨ Athena.ai suggest
+            </button>
+          </div>
+          
+          {showDescription && (
+            <div className="animate-fadeIn">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                placeholder="Describe your idea in detail..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-black focus:outline-none transition-colors min-h-[120px]"
+              />
             </div>
           )}
-          
-          <p className="text-sm text-gray-500 mt-1">
-            Separate tags with commas. Click on the input to see previous tags.
-          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Tags
+          </label>
+          <div className="flex flex-wrap gap-2 p-2 border-2 border-gray-300 rounded-lg focus-within:border-black bg-white">
+            {tags.map((tag, index) => (
+              <span key={index} className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-sm font-medium flex items-center gap-1 border border-gray-300">
+                #{tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="text-gray-500 hover:text-red-500 font-bold px-1"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              placeholder={tags.length === 0 ? "Type tag and press Enter/Space..." : ""}
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              className="flex-1 outline-none min-w-[120px] bg-transparent"
+            />
+          </div>
         </div>
 
         <div className="flex gap-3 pt-4">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-gradient-to-r from-orange-400 to-yellow-400 text-black border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 rounded-lg hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all duration-200 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Saving..." : editMode ? "Update Idea" : "Add Idea"}
           </button>
@@ -252,7 +184,7 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+              className="px-6 py-3 border-2 border-black text-black rounded-lg hover:bg-gray-50 transition-colors font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
             >
               Cancel
             </button>

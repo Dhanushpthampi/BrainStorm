@@ -2,10 +2,60 @@
 import Sidebar from "../components/Sidebar";
 import BoardCanvas from "../components/BoardCanvas";
 import { useIdeas } from "../context/IdeasContext";
+import { useState, useEffect } from "react";
 
 export default function IdeaBoardPage() {
   const { ideas, setIdeas, isLoading } = useIdeas();
   const mapId = "default-map";
+  const [draggingFromSidebar, setDraggingFromSidebar] = useState(null);
+
+  // Listen for sidebar drag events
+  useEffect(() => {
+    const handleSidebarDragMove = (e) => {
+      setDraggingFromSidebar({
+        id: e.detail.id,
+        x: e.detail.x,
+        y: e.detail.y
+      });
+    };
+
+    const handleSidebarDragEnd = (e) => {
+      if (draggingFromSidebar) {
+        // Get canvas container bounds
+        const canvasContainer = document.querySelector('.board-canvas-container');
+        if (canvasContainer) {
+          const rect = canvasContainer.getBoundingClientRect();
+          const isOverCanvas = draggingFromSidebar.x >= rect.left && 
+                              draggingFromSidebar.x <= rect.right &&
+                              draggingFromSidebar.y >= rect.top && 
+                              draggingFromSidebar.y <= rect.bottom;
+          
+          if (isOverCanvas) {
+            // Convert to canvas coordinates
+            const x = Math.max(0, draggingFromSidebar.x - rect.left - 100);
+            const y = Math.max(0, draggingFromSidebar.y - rect.top - 30);
+            
+            setIdeas(prev => 
+              prev.map(idea => 
+                idea.id === e.detail.id 
+                  ? { ...idea, x, y } 
+                  : idea
+              )
+            );
+          }
+        }
+      }
+      setDraggingFromSidebar(null);
+    };
+
+    window.addEventListener('sidebarDragMove', handleSidebarDragMove);
+    window.addEventListener('sidebarDragEnd', handleSidebarDragEnd);
+
+    return () => {
+      window.removeEventListener('sidebarDragMove', handleSidebarDragMove);
+      window.removeEventListener('sidebarDragEnd', handleSidebarDragEnd);
+    };
+  }, [draggingFromSidebar, setIdeas]);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -14,8 +64,8 @@ export default function IdeaBoardPage() {
     if (!id) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = Math.max(0, e.clientX - rect.left - 100); // Adjust for card width
-    const y = Math.max(0, e.clientY - rect.top - 30);   // Adjust for card height
+    const x = Math.max(0, e.clientX - rect.left - 100);
+    const y = Math.max(0, e.clientY - rect.top - 30);
 
     setIdeas((prev) => {
       return prev.map((idea) =>
@@ -24,12 +74,10 @@ export default function IdeaBoardPage() {
     });
   };
 
-  // Function to handle placing cards from sidebar onto canvas
   const handleCanvasClick = (e, canvasRect) => {
-    const x = e.clientX - canvasRect.left - 100; // Adjust for card width center
-    const y = e.clientY - canvasRect.top - 40;   // Adjust for card height center
+    const x = e.clientX - canvasRect.left - 100;
+    const y = e.clientY - canvasRect.top - 40;
     
-    // Find first idea without position (from sidebar)
     const unplacedIdea = ideas.find(idea => 
       (idea.x === undefined || idea.x === null) && 
       (idea.y === undefined || idea.y === null) && 
@@ -47,7 +95,6 @@ export default function IdeaBoardPage() {
     }
   };
 
-  // Separate ideas into sidebar (no position) and canvas (with position)
   const sidebarIdeas = ideas.filter((idea) => 
     (idea.x === undefined || idea.x === null) && 
     (idea.y === undefined || idea.y === null) && 
@@ -71,8 +118,6 @@ export default function IdeaBoardPage() {
           e.dataTransfer.effectAllowed = "move";
         }}
         onCardClick={(id) => {
-          // Place card in center of current view (approximate since we don't have zoom/pan here)
-          // We'll place it at a fixed offset for now, user can move it later
           const x = 150 + Math.random() * 50;
           const y = 150 + Math.random() * 50;
           
@@ -86,7 +131,7 @@ export default function IdeaBoardPage() {
         }}
       />
       <div 
-        className="flex-1 relative"
+        className="flex-1 relative board-canvas-container"
         onDrop={handleDrop} 
         onDragOver={(e) => {
           e.preventDefault();
@@ -100,12 +145,21 @@ export default function IdeaBoardPage() {
           onCanvasClick={handleCanvasClick}
         />
         
-        {/* Debug info - remove this in production */}
-        <div className="absolute top-4 right-4 bg-white p-2 rounded shadow text-xs hidden md:block">
-          <div>Total: {ideas.length}</div>
-          <div>Sidebar: {sidebarIdeas.length}</div>
-          <div>Canvas: {ideas.filter(i => i.x !== undefined && i.y !== undefined && !i.archived).length}</div>
-        </div>
+        {/* Dragging ghost from sidebar */}
+        {draggingFromSidebar && (
+          <div 
+            className="fixed pointer-events-none z-50 bg-white p-3 rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-[200px] opacity-90"
+            style={{ 
+              left: draggingFromSidebar.x - 100, 
+              top: draggingFromSidebar.y - 30,
+              transform: 'rotate(3deg)'
+            }}
+          >
+            <strong className="text-black block truncate font-bold">
+              {ideas.find(i => i.id === draggingFromSidebar.id)?.title}
+            </strong>
+          </div>
+        )}
       </div>
     </div>
   );
