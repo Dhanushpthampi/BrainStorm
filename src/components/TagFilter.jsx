@@ -1,57 +1,46 @@
-import { getIdeas } from "../utils/localStorageUtils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useIdeas } from "../context/IdeasContext";
 
-export default function TagFilter({ onTagSelect, refreshKey }) {
-  const [tags, setTags] = useState([]);
-  const [active, setActive] = useState("");
-
-  useEffect(() => {
-    const loadTags = () => {
-      try {
-        const ideas = getIdeas().filter(i => !i.archived);
-        
-        // Collect all tags and normalize to lowercase
-        const allTags = ideas.reduce((tagSet, idea) => {
-          if (idea.tags && Array.isArray(idea.tags)) {
-            idea.tags.forEach(tag => {
-              if (tag && typeof tag === 'string') {
-                // Normalize to lowercase and trim whitespace
-                const normalizedTag = tag.toLowerCase().trim();
-                if (normalizedTag) {
-                  tagSet.add(normalizedTag);
-                }
-              }
-            });
+export default function TagFilter() {
+  const { ideas, selectedTag, setSelectedTag } = useIdeas();
+  
+  // Calculate tags from ideas
+  const tags = useMemo(() => {
+    const activeIdeas = ideas.filter(i => !i.archived);
+    
+    // Collect all tags and normalize to lowercase
+    const allTags = activeIdeas.reduce((tagSet, idea) => {
+      if (idea.tags && Array.isArray(idea.tags)) {
+        idea.tags.forEach(tag => {
+          if (tag && typeof tag === 'string') {
+            // Normalize to lowercase and trim whitespace
+            const normalizedTag = tag.toLowerCase().trim();
+            if (normalizedTag) {
+              tagSet.add(normalizedTag);
+            }
           }
-          return tagSet;
-        }, new Set());
-        
-        // Convert Set to sorted array
-        setTags(Array.from(allTags).sort());
-      } catch (error) {
-        console.error('Error loading tags:', error);
-        setTags([]);
+        });
       }
-    };
-
-    loadTags();
-  }, [refreshKey]); // Re-run when refreshKey changes
+      return tagSet;
+    }, new Set());
+    
+    // Convert Set to sorted array
+    return Array.from(allTags).sort();
+  }, [ideas]);
 
   // Listen for clear filter events
   useEffect(() => {
     const handleClearFilter = () => {
-      setActive("");
-      onTagSelect("");
+      setSelectedTag("");
     };
 
     window.addEventListener('clearTagFilter', handleClearFilter);
     return () => window.removeEventListener('clearTagFilter', handleClearFilter);
-  }, [onTagSelect]);
+  }, [setSelectedTag]);
 
   const handleClick = (tag) => {
-    const next = tag === active ? "" : tag;
-    setActive(next);
-    onTagSelect(next);
+    const next = tag === selectedTag ? "" : tag;
+    setSelectedTag(next);
   };
 
   if (tags.length === 0) {
@@ -69,7 +58,7 @@ export default function TagFilter({ onTagSelect, refreshKey }) {
           <button
             onClick={() => handleClick("")}
             className={`px-4 py-2 rounded-full border-2 font-medium transition-all duration-200 ${
-              active === "" 
+              selectedTag === "" 
                 ? 'bg-gray-800 text-white border-gray-800' 
                 : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
             }`}
@@ -82,7 +71,7 @@ export default function TagFilter({ onTagSelect, refreshKey }) {
               key={tag}
               onClick={() => handleClick(tag)}
               className={`px-4 py-2 rounded-full border-2 font-medium transition-all duration-200 ${
-                active === tag 
+                selectedTag === tag 
                   ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
                   : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50'
               }`}
@@ -92,10 +81,10 @@ export default function TagFilter({ onTagSelect, refreshKey }) {
           ))}
         </div>
         
-        {active && (
+        {selectedTag && (
           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-sm text-blue-800">
-              Showing ideas tagged with <strong>#{active}</strong>
+              Showing ideas tagged with <strong>#{selectedTag}</strong>
               <button 
                 onClick={() => handleClick("")}
                 className="ml-2 text-blue-600 hover:text-blue-800 underline"

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { saveIdea, updateIdea, getIdeas } from "../utils/localStorageUtils";
 import { useNavigate } from "react-router-dom"; 
+import { useIdeas } from "../context/IdeasContext";
 
 export default function IdeaForm({ editMode = false, existingIdea = null, onIdeaAdded }) {
+  const { addIdea, updateIdea, ideas } = useIdeas();
   const [idea, setIdea] = useState(existingIdea?.title || "");
   const [description, setDescription] = useState(existingIdea?.description || "");
   const [tags, setTags] = useState(existingIdea?.tags?.join(", ") || "");
@@ -14,11 +15,10 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
   const tagInputRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // Load all existing tags on component mount
+  // Load all existing tags
   useEffect(() => {
     const loadExistingTags = () => {
       try {
-        const ideas = getIdeas();
         const tagSet = new Set();
         
         ideas.forEach(ideaItem => {
@@ -39,7 +39,7 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
     };
 
     loadExistingTags();
-  }, []);
+  }, [ideas]);
 
   // Handle tag input changes and filtering
   const handleTagInputChange = (e) => {
@@ -113,8 +113,8 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
     try {
       const ideaData = {
         id: editMode ? existingIdea.id : crypto.randomUUID(),
-        title: idea.trim(), // Keep as 'title' for backend storage
-        description: description.trim() || "", // Make optional, empty string if not provided
+        title: idea.trim(),
+        description: description.trim() || "",
         tags: tags.split(",").map((tag) => tag.trim()).filter(tag => tag.length > 0),
         createdAt: editMode ? existingIdea.createdAt : new Date().toISOString(),
         archived: false,
@@ -123,7 +123,7 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
       if (editMode) {
         updateIdea(ideaData);
       } else {
-        saveIdea(ideaData);
+        addIdea(ideaData);
       }
 
       // Clear form

@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MIN_ZOOM, MAX_ZOOM } from "../utils/canvasMath";
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 5;
+
 
 const ZOOM_SENSITIVITY = 0.001;
 

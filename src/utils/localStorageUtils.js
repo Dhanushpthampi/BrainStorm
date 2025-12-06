@@ -1,49 +1,26 @@
 // Helpers
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-// Initialize default map if none exists
-const initializeDefaultMap = () => {
+// 🔹 Get all global ideas
+export const getGlobalIdeas = () => {
   try {
-    const maps = getMaps();
-    const activeMapId = getActiveMapId();
-    
-    // If no maps exist at all, create default map
-    if (Object.keys(maps).length === 0) {
-      const legacyIdeas = JSON.parse(localStorage.getItem('ideas') || '[]');
-      const legacyLinks = JSON.parse(localStorage.getItem('brainstorm-links') || '[]');
-      
-      maps['default-map'] = { 
-        name: 'Default Map', 
-        ideas: legacyIdeas,
-        links: legacyLinks
-      };
-      saveMaps(maps);
-      setActiveMapId('default-map');
-      return;
-    }
-    
-    // If default map doesn't exist but other maps do
-    if (!maps['default-map']) {
-      maps['default-map'] = { 
-        name: 'Default Map', 
-        ideas: [],
-        links: []
-      };
-      saveMaps(maps);
-    }
-    
-    // If no active map is set, set to default
-    if (!activeMapId || !maps[activeMapId]) {
-      setActiveMapId('default-map');
-    }
+    const data = localStorage.getItem("brainstorm-global-ideas");
+    return data ? JSON.parse(data) : [];
   } catch (error) {
-    console.error('Error initializing default map:', error);
-    // Reset to clean state if there's corruption
-    const cleanMaps = {
-      'default-map': { name: 'Default Map', ideas: [], links: [] }
-    };
-    saveMaps(cleanMaps);
-    setActiveMapId('default-map');
+    console.error('Error getting global ideas:', error);
+    return [];
+  }
+};
+
+// 🔹 Save all global ideas
+export const saveGlobalIdeas = (ideas) => {
+  try {
+    localStorage.setItem("brainstorm-global-ideas", JSON.stringify(ideas));
+    // Trigger storage event
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('globalIdeasUpdated'));
+  } catch (error) {
+    console.error('Error saving global ideas:', error);
   }
 };
 
@@ -62,11 +39,109 @@ export const getMaps = () => {
 export const saveMaps = (maps) => {
   try {
     localStorage.setItem("brainstorm-maps", JSON.stringify(maps));
-    // Trigger storage event for other components
+    // Trigger storage event
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new CustomEvent('storageUpdate'));
   } catch (error) {
     console.error('Error saving maps:', error);
+  }
+};
+
+// 🔹 Migration: Convert legacy map-bound ideas to global library
+const migrateToGlobalLibrary = () => {
+  try {
+    const globalIdeas = getGlobalIdeas();
+    const maps = getMaps();
+    
+    // If we already have global ideas and maps have 'nodes' property, assume migrated
+    const isMigrated = globalIdeas.length > 0 || Object.values(maps).some(m => m.nodes);
+    
+    if (isMigrated && globalIdeas.length > 0) return;
+
+    console.log('Migrating to global idea library...');
+    
+    const allIdeasMap = new Map();
+    
+    // 1. Collect ideas from legacy 'ideas' key if exists
+    const legacyIdeas = JSON.parse(localStorage.getItem('ideas') || '[]');
+    legacyIdeas.forEach(idea => {
+      if (!allIdeasMap.has(idea.id)) {
+        // Strip position data for global store
+        const { x, y, ...ideaData } = idea;
+        allIdeasMap.set(idea.id, ideaData);
+      }
+    });
+
+    // 2. Collect ideas from all maps
+    Object.keys(maps).forEach(mapId => {
+      const map = maps[mapId];
+      if (Array.isArray(map.ideas)) {
+        map.ideas.forEach(idea => {
+          if (!allIdeasMap.has(idea.id)) {
+            const { x, y, ...ideaData } = idea;
+            allIdeasMap.set(idea.id, ideaData);
+          }
+        });
+        
+        // Convert map.ideas to map.nodes
+        map.nodes = map.ideas
+          .filter(i => i.x !== undefined && i.y !== undefined)
+          .map(i => ({ id: i.id, x: i.x, y: i.y }));
+        
+        delete map.ideas; // Remove legacy array
+      } else if (!map.nodes) {
+        map.nodes = [];
+      }
+    });
+
+    // 3. Save Global Ideas
+    saveGlobalIdeas(Array.from(allIdeasMap.values()));
+    
+    // 4. Save Updated Maps
+    saveMaps(maps);
+    
+    console.log('Migration completed successfully.');
+  } catch (error) {
+    console.error('Error during migration:', error);
+  }
+};
+
+// Initialize default map if none exists
+const initializeDefaultMap = () => {
+  try {
+    migrateToGlobalLibrary(); // Run migration first
+    
+    const maps = getMaps();
+    const activeMapId = getActiveMapId();
+    
+    // If no maps exist at all, create default map
+    if (Object.keys(maps).length === 0) {
+      maps['default-map'] = { 
+        name: 'Default Map', 
+        nodes: [],
+        links: []
+      };
+      saveMaps(maps);
+      setActiveMapId('default-map');
+      return;
+    }
+    
+    // If default map doesn't exist but other maps do
+    if (!maps['default-map']) {
+      maps['default-map'] = { 
+        name: 'Default Map', 
+        nodes: [],
+        links: []
+      };
+      saveMaps(maps);
+    }
+    
+    // If no active map is set, set to default
+    if (!activeMapId || !maps[activeMapId]) {
+      setActiveMapId('default-map');
+    }
+  } catch (error) {
+    console.error('Error initializing default map:', error);
   }
 };
 
@@ -84,7 +159,6 @@ export const getActiveMapId = () => {
 export const setActiveMapId = (id) => {
   try {
     localStorage.setItem("active-map-id", id);
-    // Trigger storage event for other components
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new CustomEvent('mapChanged', { detail: id }));
   } catch (error) {
@@ -99,7 +173,7 @@ export const createNewMap = (name = "Untitled Map") => {
     const maps = getMaps();
     maps[id] = { 
       name, 
-      ideas: [], 
+      nodes: [], 
       links: [],
       created: new Date().toISOString()
     };
@@ -126,10 +200,9 @@ export const duplicateMap = (sourceMapId, newName = null) => {
     const id = generateId();
     const duplicatedName = newName || `${sourceMap.name} (Copy)`;
     
-    // Deep copy the source map to avoid reference issues
     maps[id] = {
       name: duplicatedName,
-      ideas: JSON.parse(JSON.stringify(sourceMap.ideas || [])),
+      nodes: JSON.parse(JSON.stringify(sourceMap.nodes || [])),
       links: JSON.parse(JSON.stringify(sourceMap.links || [])),
       created: new Date().toISOString()
     };
@@ -146,25 +219,23 @@ export const duplicateMap = (sourceMapId, newName = null) => {
 // 🔹 Get current map object
 export const getCurrentMap = () => {
   try {
-    initializeDefaultMap(); // Ensure default map exists
+    initializeDefaultMap();
     const id = getActiveMapId();
     const maps = getMaps();
     const currentMap = maps[id];
     
     if (!currentMap) {
-      console.warn(`Map ${id} not found, falling back to default`);
-      return maps['default-map'] || { ideas: [], links: [] };
+      return maps['default-map'] || { nodes: [], links: [] };
     }
     
-    // Ensure the map has the required structure
     return {
       name: currentMap.name || 'Default Map',
-      ideas: Array.isArray(currentMap.ideas) ? currentMap.ideas : [],
+      nodes: Array.isArray(currentMap.nodes) ? currentMap.nodes : [],
       links: Array.isArray(currentMap.links) ? currentMap.links : []
     };
   } catch (error) {
     console.error('Error getting current map:', error);
-    return { ideas: [], links: [] };
+    return { nodes: [], links: [] };
   }
 };
 
@@ -177,15 +248,11 @@ export const deleteMap = (mapId) => {
     }
     
     const maps = getMaps();
-    if (!maps[mapId]) {
-      console.error('Map not found:', mapId);
-      return false;
-    }
+    if (!maps[mapId]) return false;
     
     delete maps[mapId];
     saveMaps(maps);
     
-    // If deleting the active map, switch to default
     if (getActiveMapId() === mapId) {
       setActiveMapId('default-map');
     }
@@ -201,10 +268,7 @@ export const deleteMap = (mapId) => {
 export const renameMap = (mapId, newName) => {
   try {
     const maps = getMaps();
-    if (!maps[mapId]) {
-      console.error('Map not found:', mapId);
-      return false;
-    }
+    if (!maps[mapId]) return false;
     
     maps[mapId].name = newName;
     saveMaps(maps);
@@ -215,32 +279,48 @@ export const renameMap = (mapId, newName) => {
   }
 };
 
-// 🔹 Save idea to current map
+// 🔹 Save idea (Global)
 export const saveIdea = (newIdea) => {
   try {
     initializeDefaultMap();
-    const maps = getMaps();
-    const id = getActiveMapId();
+    const globalIdeas = getGlobalIdeas();
     
-    if (!maps[id]) {
-      maps[id] = { name: 'Default Map', ideas: [], links: [] };
-    }
-    
-    // Add unique ID if not present
     if (!newIdea.id) {
       newIdea.id = generateId();
     }
     
-    // Ensure ideas array exists
-    if (!Array.isArray(maps[id].ideas)) {
-      maps[id].ideas = [];
+    // Remove position data before saving to global
+    const { x, y, ...ideaData } = newIdea;
+    
+    // Check if idea with this ID already exists
+    const existingIndex = globalIdeas.findIndex(i => i.id === newIdea.id);
+    if (existingIndex !== -1) {
+      // If exists, update it instead of adding duplicate
+      globalIdeas[existingIndex] = { ...globalIdeas[existingIndex], ...ideaData };
+    } else {
+      globalIdeas.unshift(ideaData);
     }
     
-    maps[id].ideas.unshift(newIdea);
-    saveMaps(maps);
+    saveGlobalIdeas(globalIdeas);
     
-    // Keep legacy support but don't let it override our map data
-    localStorage.setItem('ideas', JSON.stringify(maps[id].ideas));
+    // If it has position, add to current map
+    if (x !== undefined && y !== undefined) {
+      const maps = getMaps();
+      const id = getActiveMapId();
+      if (maps[id]) {
+        if (!maps[id].nodes) maps[id].nodes = [];
+        
+        // Check if node exists
+        const nodeIndex = maps[id].nodes.findIndex(n => n.id === newIdea.id);
+        if (nodeIndex !== -1) {
+          maps[id].nodes[nodeIndex] = { id: newIdea.id, x, y };
+        } else {
+          maps[id].nodes.push({ id: newIdea.id, x, y });
+        }
+        
+        saveMaps(maps);
+      }
+    }
     
     return newIdea;
   } catch (error) {
@@ -249,12 +329,22 @@ export const saveIdea = (newIdea) => {
   }
 };
 
-// 🔹 Get all ideas from current map
+// 🔹 Get all ideas (Merged Global + Map Positions)
 export const getIdeas = () => {
   try {
     initializeDefaultMap();
+    const globalIdeas = getGlobalIdeas();
     const map = getCurrentMap();
-    return Array.isArray(map.ideas) ? map.ideas : [];
+    const nodes = map.nodes || [];
+    
+    // Merge global ideas with map positions
+    return globalIdeas.map(idea => {
+      const node = nodes.find(n => n.id === idea.id);
+      if (node) {
+        return { ...idea, x: node.x, y: node.y };
+      }
+      return idea;
+    });
   } catch (error) {
     console.error('Error getting ideas:', error);
     return [];
@@ -264,7 +354,7 @@ export const getIdeas = () => {
 // 🔹 Get a single idea by ID
 export const getIdeaById = (ideaId) => {
   try {
-    const ideas = getIdeas();
+    const ideas = getGlobalIdeas();
     return ideas.find(idea => idea.id === ideaId) || null;
   } catch (error) {
     console.error('Error getting idea by ID:', error);
@@ -272,29 +362,36 @@ export const getIdeaById = (ideaId) => {
   }
 };
 
-// 🔹 Update one idea
+// 🔹 Update one idea (Global Data + Map Position)
 export const updateIdea = (updatedIdea) => {
   try {
-    initializeDefaultMap();
-    const maps = getMaps();
-    const id = getActiveMapId();
+    // 1. Update Global Data
+    const globalIdeas = getGlobalIdeas();
+    const index = globalIdeas.findIndex(i => i.id === updatedIdea.id);
     
-    if (!maps[id]) {
-      maps[id] = { name: 'Default Map', ideas: [], links: [] };
-    }
-    
-    if (!Array.isArray(maps[id].ideas)) {
-      maps[id].ideas = [];
+    if (index !== -1) {
+      const { x, y, ...ideaData } = updatedIdea;
+      globalIdeas[index] = { ...globalIdeas[index], ...ideaData };
+      saveGlobalIdeas(globalIdeas);
     }
 
-    maps[id].ideas = maps[id].ideas.map((idea) =>
-      idea.id === updatedIdea.id ? updatedIdea : idea
-    );
-    saveMaps(maps);
-    
-    // Keep legacy support
-    localStorage.setItem('ideas', JSON.stringify(maps[id].ideas));
-    
+    // 2. Update Map Position if changed
+    if (updatedIdea.x !== undefined && updatedIdea.y !== undefined) {
+      const maps = getMaps();
+      const id = getActiveMapId();
+      if (maps[id]) {
+        if (!maps[id].nodes) maps[id].nodes = [];
+        const nodeIndex = maps[id].nodes.findIndex(n => n.id === updatedIdea.id);
+        
+        if (nodeIndex !== -1) {
+          maps[id].nodes[nodeIndex] = { id: updatedIdea.id, x: updatedIdea.x, y: updatedIdea.y };
+        } else {
+          maps[id].nodes.push({ id: updatedIdea.id, x: updatedIdea.x, y: updatedIdea.y });
+        }
+        saveMaps(maps);
+      }
+    }
+
     return true;
   } catch (error) {
     console.error('Error updating idea:', error);
@@ -302,24 +399,30 @@ export const updateIdea = (updatedIdea) => {
   }
 };
 
-// 🔹 Update all ideas
+// 🔹 Update all ideas (Batch)
 export const updateIdeas = (ideas) => {
   try {
-    initializeDefaultMap();
+    // This function is mostly used for updating positions in BoardCanvas
+    // So we focus on updating map nodes, but also sync global data if needed
+    
     const maps = getMaps();
-    const id = getActiveMapId();
+    const mapId = getActiveMapId();
     
-    if (!maps[id]) {
-      maps[id] = { name: 'Default Map', ideas: [], links: [] };
-    }
+    if (!maps[mapId]) return false;
     
-    // Ensure ideas is an array
-    const safeIdeas = Array.isArray(ideas) ? ideas : [];
-    maps[id].ideas = safeIdeas;
+    // Update Map Nodes
+    const newNodes = [];
+    ideas.forEach(idea => {
+      if (idea.x !== undefined && idea.y !== undefined && !idea.archived) {
+        newNodes.push({ id: idea.id, x: idea.x, y: idea.y });
+      }
+    });
+    
+    maps[mapId].nodes = newNodes;
     saveMaps(maps);
     
-    // Keep legacy support
-    localStorage.setItem('ideas', JSON.stringify(safeIdeas));
+    // We don't typically batch update global idea content (title/desc) from canvas
+    // But if we did, we would need to diff and save to globalIdeas
     
     return true;
   } catch (error) {
@@ -328,30 +431,25 @@ export const updateIdeas = (ideas) => {
   }
 };
 
-// 🔹 Delete one idea
+// 🔹 Delete one idea (Global)
 export const deleteIdea = (ideaId) => {
   try {
-    initializeDefaultMap();
+    // Remove from Global
+    const globalIdeas = getGlobalIdeas();
+    const newGlobalIdeas = globalIdeas.filter(i => i.id !== ideaId);
+    saveGlobalIdeas(newGlobalIdeas);
+    
+    // Remove from ALL maps
     const maps = getMaps();
-    const id = getActiveMapId();
-    
-    if (!maps[id]) return false;
-    
-    if (!Array.isArray(maps[id].ideas)) {
-      maps[id].ideas = [];
-    }
-    if (!Array.isArray(maps[id].links)) {
-      maps[id].links = [];
-    }
-
-    maps[id].ideas = maps[id].ideas.filter((idea) => idea.id !== ideaId);
-    maps[id].links = maps[id].links.filter(
-      (link) => link.from !== ideaId && link.to !== ideaId
-    );
+    Object.keys(maps).forEach(mapId => {
+      if (maps[mapId].nodes) {
+        maps[mapId].nodes = maps[mapId].nodes.filter(n => n.id !== ideaId);
+      }
+      if (maps[mapId].links) {
+        maps[mapId].links = maps[mapId].links.filter(l => l.from !== ideaId && l.to !== ideaId);
+      }
+    });
     saveMaps(maps);
-    
-    // Keep legacy support
-    localStorage.setItem('ideas', JSON.stringify(maps[id].ideas));
     
     return true;
   } catch (error) {
@@ -363,11 +461,14 @@ export const deleteIdea = (ideaId) => {
 // 🔹 Archive & Restore
 export const archiveIdea = (ideaId) => {
   try {
-    const ideas = getIdeas().map((idea) =>
-      idea.id === ideaId ? { ...idea, archived: true } : idea
-    );
-    updateIdeas(ideas);
-    return true;
+    const globalIdeas = getGlobalIdeas();
+    const index = globalIdeas.findIndex(i => i.id === ideaId);
+    if (index !== -1) {
+      globalIdeas[index].archived = true;
+      saveGlobalIdeas(globalIdeas);
+      return true;
+    }
+    return false;
   } catch (error) {
     console.error('Error archiving idea:', error);
     return false;
@@ -376,11 +477,14 @@ export const archiveIdea = (ideaId) => {
 
 export const restoreIdea = (ideaId) => {
   try {
-    const ideas = getIdeas().map((idea) =>
-      idea.id === ideaId ? { ...idea, archived: false } : idea
-    );
-    updateIdeas(ideas);
-    return true;
+    const globalIdeas = getGlobalIdeas();
+    const index = globalIdeas.findIndex(i => i.id === ideaId);
+    if (index !== -1) {
+      globalIdeas[index].archived = false;
+      saveGlobalIdeas(globalIdeas);
+      return true;
+    }
+    return false;
   } catch (error) {
     console.error('Error restoring idea:', error);
     return false;
@@ -405,13 +509,9 @@ export const saveLinks = (links) => {
     const maps = getMaps();
     const mapId = getActiveMapId();
     
-    if (!maps[mapId]) {
-      maps[mapId] = { name: 'Default Map', ideas: [], links: [] };
-    }
+    if (!maps[mapId]) return false;
     
-    // Ensure links is an array
-    const safeLinks = Array.isArray(links) ? links : [];
-    maps[mapId].links = safeLinks;
+    maps[mapId].links = Array.isArray(links) ? links : [];
     saveMaps(maps);
     return true;
   } catch (error) {
@@ -426,13 +526,8 @@ export const saveLink = (id1, id2) => {
     const maps = getMaps();
     const mapId = getActiveMapId();
     
-    if (!maps[mapId]) {
-      maps[mapId] = { name: 'Default Map', ideas: [], links: [] };
-    }
-
-    if (!Array.isArray(maps[mapId].links)) {
-      maps[mapId].links = [];
-    }
+    if (!maps[mapId]) return false;
+    if (!maps[mapId].links) maps[mapId].links = [];
 
     const links = maps[mapId].links;
     const exists = links.some(
@@ -463,11 +558,7 @@ export const deleteLink = (id1, id2) => {
     const maps = getMaps();
     const mapId = getActiveMapId();
     
-    if (!maps[mapId]) return false;
-    
-    if (!Array.isArray(maps[mapId].links)) {
-      maps[mapId].links = [];
-    }
+    if (!maps[mapId] || !maps[mapId].links) return false;
 
     const originalLength = maps[mapId].links.length;
     maps[mapId].links = maps[mapId].links.filter(
@@ -494,14 +585,20 @@ export const exportMap = (mapId = null) => {
     const maps = getMaps();
     const map = maps[targetMapId];
     
-    if (!map) {
-      console.error('Map not found for export:', targetMapId);
-      return null;
-    }
+    if (!map) return null;
     
+    // Hydrate nodes with idea data for export
+    const globalIdeas = getGlobalIdeas();
+    const hydratedIdeas = (map.nodes || []).map(node => {
+      const idea = globalIdeas.find(i => i.id === node.id);
+      return idea ? { ...idea, x: node.x, y: node.y } : null;
+    }).filter(Boolean);
+
     return {
       id: targetMapId,
-      ...map,
+      name: map.name,
+      ideas: hydratedIdeas,
+      links: map.links || [],
       exportDate: new Date().toISOString()
     };
   } catch (error) {
@@ -515,9 +612,26 @@ export const importMap = (mapData, newName = null) => {
     const id = generateId();
     const maps = getMaps();
     
+    // Save imported ideas to global library
+    if (Array.isArray(mapData.ideas)) {
+      mapData.ideas.forEach(idea => {
+        saveIdea(idea); // This handles global save + checking for duplicates (if we added check)
+        // Actually saveIdea generates new ID if missing.
+        // We should probably check if ID exists to avoid duplicates if importing same map?
+        // For now, let's just save them.
+      });
+    }
+
+    // Create nodes from ideas
+    const nodes = Array.isArray(mapData.ideas) 
+      ? mapData.ideas
+          .filter(i => i.x !== undefined && i.y !== undefined)
+          .map(i => ({ id: i.id, x: i.x, y: i.y }))
+      : [];
+
     maps[id] = {
       name: newName || mapData.name || 'Imported Map',
-      ideas: Array.isArray(mapData.ideas) ? mapData.ideas : [],
+      nodes: nodes,
       links: Array.isArray(mapData.links) ? mapData.links : [],
       created: new Date().toISOString(),
       imported: true
@@ -543,7 +657,7 @@ export const searchIdeas = (query, options = {}) => {
       caseSensitive = false 
     } = options;
     
-    const ideas = getIdeas();
+    const ideas = getGlobalIdeas();
     const searchTerm = caseSensitive ? query.trim() : query.trim().toLowerCase();
     
     return ideas.filter(idea => {
@@ -553,13 +667,11 @@ export const searchIdeas = (query, options = {}) => {
       const description = idea.description ? 
         (caseSensitive ? idea.description : idea.description.toLowerCase()) : '';
       
-      // Search in title and description
       let matches = title.includes(searchTerm);
       if (searchInDescription && !matches) {
         matches = description.includes(searchTerm);
       }
       
-      // Search in tags
       if (searchInTags && !matches && idea.tags && Array.isArray(idea.tags)) {
         matches = idea.tags.some(tag => {
           const tagText = caseSensitive ? tag : tag.toLowerCase();
@@ -584,22 +696,25 @@ export const getMapStats = (mapId = null) => {
     
     if (!map) return null;
     
-    const ideas = Array.isArray(map.ideas) ? map.ideas : [];
-    const links = Array.isArray(map.links) ? map.links : [];
+    const globalIdeas = getGlobalIdeas();
+    const nodes = map.nodes || [];
+    const links = map.links || [];
+    
+    // Count ideas on this map
+    const mapIdeaIds = new Set(nodes.map(n => n.id));
+    const mapIdeas = globalIdeas.filter(i => mapIdeaIds.has(i.id));
     
     const stats = {
-      totalIdeas: ideas.length,
-      activeIdeas: ideas.filter(idea => !idea.archived).length,
-      archivedIdeas: ideas.filter(idea => idea.archived).length,
-      canvasIdeas: ideas.filter(idea => idea.x !== undefined && idea.y !== undefined && !idea.archived).length,
-      sidebarIdeas: ideas.filter(idea => (idea.x === undefined || idea.x === null) && !idea.archived).length,
+      totalIdeas: globalIdeas.length, // Global total
+      mapIdeas: mapIdeas.length,      // Ideas on this map
+      activeIdeas: mapIdeas.filter(idea => !idea.archived).length,
+      archivedIdeas: mapIdeas.filter(idea => idea.archived).length,
       totalLinks: links.length,
       tagCount: 0,
       uniqueTags: new Set()
     };
     
-    // Count tags
-    ideas.forEach(idea => {
+    mapIdeas.forEach(idea => {
       if (idea.tags && Array.isArray(idea.tags)) {
         idea.tags.forEach(tag => {
           stats.uniqueTags.add(tag.toLowerCase());
@@ -621,43 +736,36 @@ export const getMapStats = (mapId = null) => {
 // 🔹 Debug/Recovery function
 export const debugStorage = () => {
   console.log('=== Storage Debug ===');
+  console.log('Global Ideas:', getGlobalIdeas());
   console.log('Maps:', getMaps());
   console.log('Active Map ID:', getActiveMapId());
   console.log('Current Map:', getCurrentMap());
-  console.log('Ideas:', getIdeas());
-  console.log('Links:', getLinks());
-  console.log('Legacy ideas key:', localStorage.getItem('ideas'));
-  console.log('Map Stats:', getMapStats());
+  console.log('Merged Ideas (Current Map):', getIdeas());
 };
 
 // 🔹 Clean up and maintenance
 export const cleanupStorage = () => {
   try {
     const maps = getMaps();
+    const globalIdeas = getGlobalIdeas();
+    const globalIdeaIds = new Set(globalIdeas.map(i => i.id));
     let cleaned = false;
     
     Object.keys(maps).forEach(mapId => {
       const map = maps[mapId];
       
-      // Ensure proper structure
-      if (!Array.isArray(map.ideas)) {
-        map.ideas = [];
-        cleaned = true;
-      }
-      if (!Array.isArray(map.links)) {
-        map.links = [];
-        cleaned = true;
+      // Clean up nodes referencing non-existent ideas
+      if (map.nodes) {
+        const originalCount = map.nodes.length;
+        map.nodes = map.nodes.filter(n => globalIdeaIds.has(n.id));
+        if (map.nodes.length !== originalCount) cleaned = true;
       }
       
-      // Remove orphaned links (links that reference non-existent ideas)
-      const ideaIds = new Set(map.ideas.map(idea => idea.id));
-      const validLinks = map.links.filter(link => 
-        ideaIds.has(link.from) && ideaIds.has(link.to)
-      );
-      
-      if (validLinks.length !== map.links.length) {
-        map.links = validLinks;
-        cleaned = true;
+      // Clean up links referencing non-existent ideas
+      if (map.links) {
+        const originalCount = map.links.length;
+        map.links = map.links.filter(l => globalIdeaIds.has(l.from) && globalIdeaIds.has(l.to));
+        if (map.links.length !== originalCount) cleaned = true;
       }
     });
     
@@ -673,5 +781,5 @@ export const cleanupStorage = () => {
   }
 };
 
-// 🔹 Initialize storage on import
+// 🔹 Initialize storage
 initializeDefaultMap();

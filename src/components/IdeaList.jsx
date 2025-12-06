@@ -1,87 +1,10 @@
-import { useEffect, useState } from "react";
-import { getIdeas } from "../utils/localStorageUtils";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom"; 
+import { useIdeas } from "../context/IdeasContext";
 
-export default function IdeaList({ selectedTag, refreshKey }) {
+const GridCard = ({ idea }) => {
   const navigate = useNavigate();
-  const [ideas, setIdeas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-
-  useEffect(() => {
-    const loadIdeas = () => {
-      try {
-        setLoading(true);
-        const data = getIdeas().filter(idea => !idea.archived);
-        setIdeas(data);
-      } catch (error) {
-        console.error('Error loading ideas:', error);
-        setIdeas([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadIdeas();
-  }, [refreshKey]);
-
-  const filtered = selectedTag
-    ? ideas.filter(idea => idea.tags && idea.tags.includes(selectedTag))
-    : ideas;
-
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
-              <div className="h-6 bg-gray-200 rounded-lg mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded mb-3"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-              <div className="flex gap-2 mb-4">
-                <div className="h-6 bg-gray-200 rounded-full w-16"></div>
-                <div className="h-6 bg-gray-200 rounded-full w-20"></div>
-              </div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (filtered.length === 0) {
-    return (
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="text-center py-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-          <div className="text-8xl mb-6 opacity-60">💡</div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-3">
-            {selectedTag ? `No ideas tagged with "${selectedTag}"` : "No ideas yet"}
-          </h3>
-          <p className="text-gray-600 text-lg mb-8 max-w-md mx-auto">
-            {selectedTag ? "Try selecting a different tag or create a new idea with fresh inspiration." : "Start your creative journey by adding your first brilliant idea!"}
-          </p>
-          {selectedTag ? (
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('clearTagFilter'))}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              Clear Filter
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate('/add')}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              Add Your First Idea
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const GridCard = ({ idea }) => (
+  return (
     <div 
       className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:border-blue-200 bg-gradient-to-br from-white to-gray-50"
       onClick={() => navigate(`/idea/${idea.id}`)}
@@ -142,8 +65,11 @@ export default function IdeaList({ selectedTag, refreshKey }) {
       </div>
     </div>
   );
+};
 
-  const ListItem = ({ idea }) => (
+const ListItem = ({ idea }) => {
+  const navigate = useNavigate();
+  return (
     <div 
       className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group hover:border-blue-200 bg-gradient-to-r from-white to-gray-50"
       onClick={() => navigate(`/idea/${idea.id}`)}
@@ -205,6 +131,68 @@ export default function IdeaList({ selectedTag, refreshKey }) {
       </div>
     </div>
   );
+};
+
+export default function IdeaList() {
+  const navigate = useNavigate();
+  const { ideas, selectedTag, isLoading: loading } = useIdeas();
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+
+  const filtered = selectedTag
+    ? ideas.filter(idea => !idea.archived && idea.tags && idea.tags.includes(selectedTag))
+    : ideas.filter(idea => !idea.archived);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded-lg mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded mb-3"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div className="flex gap-2 mb-4">
+                <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+                <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+              </div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (filtered.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="text-center py-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+          <div className="text-8xl mb-6 opacity-60">💡</div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-3">
+            {selectedTag ? `No ideas tagged with "${selectedTag}"` : "No ideas yet"}
+          </h3>
+          <p className="text-gray-600 text-lg mb-8 max-w-md mx-auto">
+            {selectedTag ? "Try selecting a different tag or create a new idea with fresh inspiration." : "Start your creative journey by adding your first brilliant idea!"}
+          </p>
+          {selectedTag ? (
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('clearTagFilter'))}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              Clear Filter
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/add')}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              Add Your First Idea
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-6">

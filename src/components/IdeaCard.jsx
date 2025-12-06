@@ -4,7 +4,8 @@ export default function IdeaCard({
   idea,
   isSelected,
   onSelect,
-  onDrag
+  onDrag,
+  zoom = 1
 }) {
   const dragStartRef = useRef({ x: 0, y: 0, ideaX: 0, ideaY: 0 });
   const isDraggingRef = useRef(false);
@@ -28,8 +29,9 @@ export default function IdeaCard({
     setIsOverSidebar(false);
 
     const handleMouseMove = (ev) => {
-      const deltaX = ev.clientX - dragStartRef.current.x;
-      const deltaY = ev.clientY - dragStartRef.current.y;
+      // Adjust delta by zoom level
+      const deltaX = (ev.clientX - dragStartRef.current.x) / zoom;
+      const deltaY = (ev.clientY - dragStartRef.current.y) / zoom;
       
       // Start dragging if mouse moved more than 3 pixels
       if (!isDraggingRef.current && (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3)) {
@@ -63,7 +65,8 @@ export default function IdeaCard({
         }));
         
         // Call onDrag with the new position and sidebar status
-        onDrag(newX, newY, idea.id, overSidebar);
+        // Pass true for isCanvasCoords
+        onDrag(newX, newY, idea.id, overSidebar, true);
       }
     };
 

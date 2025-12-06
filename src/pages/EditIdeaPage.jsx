@@ -1,13 +1,24 @@
 import { useParams, useNavigate } from "react-router-dom";
 import IdeaForm from "../components/IdeaForm";
+import { useIdeas } from "../context/IdeasContext";
+import { useEffect, useState } from "react";
 
 export default function EditIdeaPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { ideas, isLoading } = useIdeas();
+  const [ideaToEdit, setIdeaToEdit] = useState(null);
 
-  // Fetch the idea from localStorage using the ID
-  const storedIdeas = JSON.parse(localStorage.getItem("ideas")) || [];
-  const ideaToEdit = storedIdeas.find((idea) => idea.id === id);
+  useEffect(() => {
+    if (!isLoading) {
+      const found = ideas.find((idea) => idea.id === id);
+      setIdeaToEdit(found);
+    }
+  }, [ideas, id, isLoading]);
+
+  if (isLoading) {
+    return <div className="p-6 text-center">Loading...</div>;
+  }
 
   // If idea not found, redirect or show error
   if (!ideaToEdit) {

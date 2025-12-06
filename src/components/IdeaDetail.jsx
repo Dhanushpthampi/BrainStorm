@@ -1,28 +1,24 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { getIdeaById, deleteIdea, archiveIdea } from "../utils/localStorageUtils";
 import { useEffect, useState } from "react";
+import { useIdeas } from "../context/IdeasContext";
 
 export default function IdeaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { ideas, deleteIdea, archiveIdea, isLoading } = useIdeas();
   const [idea, setIdea] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const data = getIdeaById(id);
-      if (!data) {
-        navigate("/");
-        return;
+    if (!isLoading) {
+      const found = ideas.find(i => i.id === id);
+      if (!found) {
+        // Only redirect if we are sure it's loaded and not found
+        // But be careful about initial load
+        // For now, let's just set idea to null and handle UI
       }
-      setIdea(data);
-    } catch (error) {
-      console.error('Error loading idea:', error);
-      navigate("/");
-    } finally {
-      setLoading(false);
+      setIdea(found || null);
     }
-  }, [id, navigate]);
+  }, [id, ideas, isLoading]);
 
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this idea? This action cannot be undone.")) {
@@ -48,7 +44,7 @@ export default function IdeaDetail() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="max-w-4xl mx-auto pt-10 px-4">
@@ -67,7 +63,21 @@ export default function IdeaDetail() {
     );
   }
 
-  if (!idea) return null;
+  if (!idea) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Idea Not Found</h2>
+          <button 
+            onClick={() => navigate("/")}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
