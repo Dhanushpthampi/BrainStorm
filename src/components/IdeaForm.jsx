@@ -18,6 +18,8 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
   const [tagInput, setTagInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDescription, setShowDescription] = useState(!!existingIdea?.description);
+  const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState("");
   const navigate = useNavigate();
 
   // Handle tag input keydown
@@ -38,8 +40,62 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const handleAthenaSuggest = () => {
-    alert("Feature coming soon!");
+  const handleAthenaSuggest = async () => {
+    if (!idea.trim()) {
+      alert("Please enter an idea title first!");
+      return;
+    }
+
+    setIsLoadingSuggestion(true);
+    setAiSuggestion("");
+
+    try {
+      // Call Netlify function
+      const response = await fetch('/.netlify/functions/ai-suggest', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentIdea: idea.trim(),
+          currentDescription: description.trim(),
+          allIdeas: ideas.map(i => ({
+            title: i.title,
+            description: i.description,
+            tags: i.tags
+          }))
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Handle rate limit error specifically
+        if (response.status === 429) {
+          alert(`⚠️ Rate Limit Reached!\n\n${data.message || 'The free API tier has reached its limit. Please add credits to your OpenRouter account.'}`);
+          return;
+        }
+        throw new Error(data.error || `Server error: ${response.status}`);
+      }
+
+      setAiSuggestion(data.suggestion);
+      
+      // Auto-show description field and populate if empty
+      if (!showDescription) {
+        setShowDescription(true);
+      }
+      
+      // If description is empty, add the suggestion
+      if (!description.trim()) {
+        setDescription(data.suggestion);
+      }
+      
+    } catch (error) {
+      console.error('AI suggestion error:', error);
+      alert('Failed to get AI suggestion. Please try again.');
+    } finally {
+      setIsLoadingSuggestion(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -122,9 +178,18 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
             <button
               type="button"
               onClick={handleAthenaSuggest}
-              className="text-sm font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1"
+              disabled={isLoadingSuggestion || !idea.trim()}
+              className="text-sm font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              ✨ Athena.ai suggest
+              {isLoadingSuggestion ? (
+                <>
+                  <span className="animate-spin">⏳</span> Thinking...
+                </>
+              ) : (
+                <>
+                  ✨ Athena.ai suggest
+                </>
+              )}
             </button>
           </div>
           
@@ -139,6 +204,37 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-black focus:outline-none transition-colors min-h-[120px]"
               />
+              
+              {/* Display AI suggestion if available and not already in description */}
+              {aiSuggestion && description !== aiSuggestion && (
+                <div className="mt-3 p-4 bg-purple-50 border-2 border-purple-300 rounded-lg animate-fadeIn">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-bold text-purple-800 flex items-center gap-2">
+                      ✨ Athena.ai Suggestions
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setAiSuggestion("")}
+                      className="text-purple-600 hover:text-purple-800 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{aiSuggestion}</p>
+                  {description.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDescription(prev => prev.trim() + "\n\n" + aiSuggestion);
+                        setAiSuggestion("");
+                      }}
+                      className="mt-2 text-xs font-bold text-purple-600 hover:text-purple-800 underline"
+                    >
+                      Append to description
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
