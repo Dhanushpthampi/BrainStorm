@@ -6,9 +6,15 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
   const [isCollapsed, setIsCollapsed] = useState(true);
   const isDraggingRef = useRef(false);
   const lastIdeasCountRef = useRef(0);
+  const dragOverTimeoutRef = useRef(null);
 
   useEffect(() => {
     const handleCardDragOver = (e) => {
+      // Clear any existing timeout
+      if (dragOverTimeoutRef.current) {
+        clearTimeout(dragOverTimeoutRef.current);
+      }
+      
       if (e.detail.isOverSidebar) {
         setIsDragOver(true);
       } else {
@@ -17,11 +23,23 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
     };
 
     const handleCardDragEnd = () => {
+      // Force clear isDragOver state
       setIsDragOver(false);
+      
+      // Clear any pending timeout
+      if (dragOverTimeoutRef.current) {
+        clearTimeout(dragOverTimeoutRef.current);
+      }
     };
 
     const handleSidebarDragEnd = () => {
+      // Force clear isDragOver state
       setIsDragOver(false);
+      
+      // Clear any pending timeout
+      if (dragOverTimeoutRef.current) {
+        clearTimeout(dragOverTimeoutRef.current);
+      }
     };
 
     window.addEventListener('ideaCardDragOver', handleCardDragOver);
@@ -32,18 +50,32 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
       window.removeEventListener('ideaCardDragOver', handleCardDragOver);
       window.removeEventListener('ideaCardDragEnd', handleCardDragEnd);
       window.removeEventListener('sidebarDragEnd', handleSidebarDragEnd);
+      
+      // Cleanup timeout on unmount
+      if (dragOverTimeoutRef.current) {
+        clearTimeout(dragOverTimeoutRef.current);
+      }
     };
   }, []);
 
   useEffect(() => {
     const sidebarCount = ideas.filter(i => 
       (i.x === undefined || i.x === null) && 
-      (i.y === undefined || i.y === null) && 
+      (i.y === undefined || i.y === null) &&
       !i.archived
     ).length;
 
     if (sidebarCount > lastIdeasCountRef.current) {
+      // Force clear isDragOver when a new idea arrives in sidebar
       setIsDragOver(false);
+      
+      // Also set a timeout as a fallback to ensure state clears
+      if (dragOverTimeoutRef.current) {
+        clearTimeout(dragOverTimeoutRef.current);
+      }
+      dragOverTimeoutRef.current = setTimeout(() => {
+        setIsDragOver(false);
+      }, 100);
     }
 
     lastIdeasCountRef.current = sidebarCount;
@@ -73,9 +105,8 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
     let dragStarted = false;
 
     const handleMove = (moveEv) => {
-      const pt = moveEv.touches ? moveEv.touches[0] : moveEv;
-      const deltaX = Math.abs(pt.clientX - startX);
-      const deltaY = Math.abs(pt.clientY - startY);
+      const deltaX = Math.abs(moveEv.clientX - startX);
+      const deltaY = Math.abs(moveEv.clientY - startY);
 
       if (!dragStarted && (deltaX > 5 || deltaY > 5)) {
         dragStarted = true;
@@ -87,20 +118,17 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
         window.dispatchEvent(new CustomEvent("sidebarDragMove", {
           detail: {
             id: idea.id,
-            x: pt.clientX,
-            y: pt.clientY
+            x: moveEv.clientX,
+            y: moveEv.clientY
           }
         }));
-
-        if (moveEv.cancelable) moveEv.preventDefault();
       }
     };
 
     const handleEnd = () => {
-      document.removeEventListener("mousemove", handleMove);
-      document.removeEventListener("mouseup", handleEnd);
-      document.removeEventListener("touchmove", handleMove);
-      document.removeEventListener("touchend", handleEnd);
+      document.removeEventListener("pointermove", handleMove);
+      document.removeEventListener("pointerup", handleEnd);
+      document.removeEventListener("pointercancel", handleEnd);
 
       if (hasMoved && dragStarted) {
         window.dispatchEvent(new CustomEvent("sidebarDragEnd", {
@@ -116,10 +144,9 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
       }
     };
 
-    document.addEventListener("mousemove", handleMove);
-    document.addEventListener("mouseup", handleEnd);
-    document.addEventListener("touchmove", handleMove, { passive: false });
-    document.addEventListener("touchend", handleEnd);
+    document.addEventListener("pointermove", handleMove);
+    document.addEventListener("pointerup", handleEnd);
+    document.addEventListener("pointercancel", handleEnd);
   };
 
   return (
@@ -175,14 +202,11 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
                 onDragStart={(e) => {
                   if (onDragStart) onDragStart(e, idea.id);
                 }}
-                onMouseDown={(e) => {
+                onPointerDown={(e) => {
                   e.preventDefault();
                   startSidebarDrag(idea, e.clientX, e.clientY, e);
                 }}
-                onTouchStart={(e) => {
-                  const t = e.touches[0];
-                  startSidebarDrag(idea, t.clientX, t.clientY, e);
-                }}
+                style={{ touchAction: 'none' }}
                 className="idea-card-item border-2 border-black rounded-lg p-3 bg-white cursor-move hover:bg-yellow-50 transition-all group active:bg-yellow-100 hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
               >
                 <div className="flex items-start justify-between">

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 export default function IdeaCard({
   idea,
@@ -12,7 +12,6 @@ export default function IdeaCard({
   const [isDragging, setIsDragging] = useState(false);
   const [isOverSidebar, setIsOverSidebar] = useState(false);
   const startTimeRef = useRef(0);
-  const touchHandledRef = useRef(false);
   
   const handleStart = (clientX, clientY) => {
     startTimeRef.current = Date.now();
@@ -67,80 +66,70 @@ export default function IdeaCard({
   };
 
   const handleEnd = () => {
+    // Force reset all drag-related state immediately
+    const wasDragging = isDraggingRef.current;
+    
+    // Reset state before any other operations
+    setIsDragging(false);
+    setIsOverSidebar(false);
+    isDraggingRef.current = false;
+
     // Notify sidebar that dragging ended - ALWAYS dispatch this
     window.dispatchEvent(new CustomEvent('ideaCardDragEnd'));
 
     const wasShortTap = (Date.now() - startTimeRef.current) < 200;
-    const wasSmallMovement = !isDraggingRef.current;
-
-    setIsDragging(false);
-    setIsOverSidebar(false);
+    const wasSmallMovement = !wasDragging;
 
     // Trigger select if it was a quick tap or small movement
     if (wasShortTap || wasSmallMovement) {
       onSelect(idea.id);
     }
-    
-    isDraggingRef.current = false;
   };
 
-  const handleMouseDown = (e) => {
-    // If touch was recently handled, ignore mouse events (prevents double-firing on mobile)
-    if (touchHandledRef.current) {
-      return;
-    }
-    
+  const handlePointerDown = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Capture the pointer so we get events even when dragging outside the element
+    e.currentTarget.setPointerCapture(e.pointerId);
+    
     handleStart(e.clientX, e.clientY);
 
-    const onMouseMove = (ev) => {
+    const onPointerMove = (ev) => {
       handleMove(ev.clientX, ev.clientY);
     };
 
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-      handleEnd();
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  };
-
-  const handleTouchStart = (e) => {
-    // Mark that touch was handled to prevent mouse events from also firing
-    touchHandledRef.current = true;
-    setTimeout(() => {
-      touchHandledRef.current = false;
-    }, 500);
-    
-    // Prevent mouse events from firing after touch
-    e.preventDefault();
-    
-    const touch = e.touches[0];
-    handleStart(touch.clientX, touch.clientY);
-
-    const onTouchMove = (ev) => {
-      const t = ev.touches[0];
+    const onPointerUp = (ev) => {
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+      document.removeEventListener("pointercancel", onPointerUp);
       
-      // Prevent scrolling while potentially dragging
-      if (ev.cancelable) {
-        ev.preventDefault();
+      // Release pointer capture
+      if (ev.currentTarget && ev.currentTarget.releasePointerCapture) {
+        try {
+          ev.currentTarget.releasePointerCapture(ev.pointerId);
+        } catch (err) {
+          // Ignore errors if pointer already released
+        }
       }
       
-      handleMove(t.clientX, t.clientY);
-    };
-
-    const onTouchEnd = (ev) => {
-      document.removeEventListener("touchmove", onTouchMove);
-      document.removeEventListener("touchend", onTouchEnd);
       handleEnd();
     };
 
-    document.addEventListener("touchmove", onTouchMove, { passive: false });
-    document.addEventListener("touchend", onTouchEnd);
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("pointercancel", onPointerUp);
   };
+  
+  // Cleanup effect to ensure state is cleared when component unmounts
+  useEffect(() => {
+    return () => {
+      // Ensure any active drag state is cleared on unmount
+      if (isDraggingRef.current) {
+        window.dispatchEvent(new CustomEvent('ideaCardDragEnd'));
+      }
+    };
+  }, []);
 
   return (
     <div
@@ -157,9 +146,8 @@ export default function IdeaCard({
           ? "shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] -translate-y-1 scale-105"
           : ""
       }`}
-      style={{ left: idea.x, top: idea.y }}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
+      style={{ left: idea.x, top: idea.y, touchAction: 'none' }}
+      onPointerDown={handlePointerDown}
     >
       {isDragging && isOverSidebar && (
         <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">

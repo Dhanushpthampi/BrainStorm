@@ -2,38 +2,43 @@
 import Sidebar from "../components/Sidebar";
 import BoardCanvas from "../components/BoardCanvas";
 import { useIdeas } from "../context/IdeasContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function IdeaBoardPage() {
   const { ideas, setIdeas, isLoading } = useIdeas();
   const mapId = "default-map";
   const [draggingFromSidebar, setDraggingFromSidebar] = useState(null);
+  const draggingRef = useRef(null);
 
   // Listen for sidebar drag events
   useEffect(() => {
     const handleSidebarDragMove = (e) => {
-      setDraggingFromSidebar({
+      const dragData = {
         id: e.detail.id,
         x: e.detail.x,
         y: e.detail.y
-      });
+      };
+      draggingRef.current = dragData;
+      setDraggingFromSidebar(dragData);
     };
 
     const handleSidebarDragEnd = (e) => {
-      if (draggingFromSidebar) {
+      const currentDragging = draggingRef.current;
+      
+      if (currentDragging) {
         // Get canvas container bounds
         const canvasContainer = document.querySelector('.board-canvas-container');
         if (canvasContainer) {
           const rect = canvasContainer.getBoundingClientRect();
-          const isOverCanvas = draggingFromSidebar.x >= rect.left && 
-                              draggingFromSidebar.x <= rect.right &&
-                              draggingFromSidebar.y >= rect.top && 
-                              draggingFromSidebar.y <= rect.bottom;
+          const isOverCanvas = currentDragging.x >= rect.left && 
+                              currentDragging.x <= rect.right &&
+                              currentDragging.y >= rect.top && 
+                              currentDragging.y <= rect.bottom;
           
           if (isOverCanvas) {
             // Convert to canvas coordinates
-            const x = Math.max(0, draggingFromSidebar.x - rect.left - 100);
-            const y = Math.max(0, draggingFromSidebar.y - rect.top - 30);
+            const x = Math.max(0, currentDragging.x - rect.left - 100);
+            const y = Math.max(0, currentDragging.y - rect.top - 30);
             
             setIdeas(prev => 
               prev.map(idea => 
@@ -45,6 +50,9 @@ export default function IdeaBoardPage() {
           }
         }
       }
+      
+      // Clear both ref and state
+      draggingRef.current = null;
       setDraggingFromSidebar(null);
     };
 
@@ -54,8 +62,11 @@ export default function IdeaBoardPage() {
     return () => {
       window.removeEventListener('sidebarDragMove', handleSidebarDragMove);
       window.removeEventListener('sidebarDragEnd', handleSidebarDragEnd);
+      // Cleanup on unmount
+      draggingRef.current = null;
+      setDraggingFromSidebar(null);
     };
-  }, [draggingFromSidebar, setIdeas]);
+  }, [setIdeas]);
 
   const handleDrop = (e) => {
     e.preventDefault();
