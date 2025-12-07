@@ -24,7 +24,7 @@ Give 1 short, innovative suggestion (max 2-3 lines) on how to make this idea uni
 
     // Call Google Gemini API (much better free tier!)
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {

@@ -39,7 +39,14 @@ export function IdeasProvider({ children }) {
 
     // Listen for storage events to sync across tabs/components
     const handleStorageChange = () => {
-      loadData();
+      try {
+        const loadedIdeas = getIdeas();
+        const loadedLinks = getLinks();
+        setIdeas(loadedIdeas || []);
+        setLinks(loadedLinks || []);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      }
     };
 
     window.addEventListener("storage", handleStorageChange);
@@ -55,7 +62,7 @@ export function IdeasProvider({ children }) {
       window.removeEventListener("mapChanged", handleStorageChange);
       window.removeEventListener("globalIdeasUpdated", handleStorageChange);
     };
-  }, [loadData]);
+  }, []); // Empty dependency array - only run once on mount
 
   const addIdea = useCallback((newIdea) => {
     const savedIdea = saveIdea(newIdea);

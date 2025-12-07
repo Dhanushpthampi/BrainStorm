@@ -1,7 +1,7 @@
 # AI Suggestion Feature Setup
 
 ## Overview
-The Athena.ai suggestion feature uses OpenRouter API to provide intelligent suggestions for your ideas based on the context of all your existing ideas.
+The Athena.ai suggestion feature uses Google Gemini API (free tier) to provide intelligent suggestions for your ideas based on the context of all your existing ideas.
 
 ## How It Works
 1. User types an idea title
@@ -15,7 +15,7 @@ The Athena.ai suggestion feature uses OpenRouter API to provide intelligent sugg
 ### 1. Environment Setup
 Create a `.env` file in the root directory:
 ```
-OPENROUTER_API_KEY=your-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
 ```
 
 ### 2. Run with Netlify Dev
@@ -39,7 +39,7 @@ This will:
 ### 1. Add Environment Variable
 In your Netlify dashboard:
 1. Go to Site settings → Environment variables
-2. Add: `OPENROUTER_API_KEY` = `your-key-here`
+2. Add: `GEMINI_API_KEY` = `your-gemini-api-key-here`
 
 ### 2. Deploy
 ```bash
@@ -57,23 +57,23 @@ npm run build
 - ✅ `.env` is in `.gitignore` (never committed to Git)
 
 ## API Model
-Currently using: `meta-llama/llama-3.2-3b-instruct:free` (free tier)
+Currently using: `gemini-1.5-flash` (Google Gemini - 1,500 free requests/day)
 
 You can change the model in `netlify-functions/ai-suggest.js`:
 ```javascript
-model: 'meta-llama/llama-3.2-3b-instruct:free'
+// In the fetch URL:
+`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`
 ```
 
-Other free models on OpenRouter:
-- `google/gemma-2-9b-it:free`
-- `meta-llama/llama-3.1-8b-instruct:free`
-- `microsoft/phi-3-mini-128k-instruct:free`
+Other Gemini models:
+- `gemini-1.5-pro` (more powerful, slower)
+- `gemini-1.0-pro` (older version)
 
 ## Troubleshooting
 
 ### "Failed to generate suggestion"
 - Check that `.env` file exists in root
-- Verify `OPENROUTER_API_KEY` is set correctly
+- Verify `GEMINI_API_KEY` is set correctly (get it from https://aistudio.google.com/app/apikey)
 - Check browser console for detailed errors
 
 ### Local testing not working
