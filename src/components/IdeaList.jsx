@@ -9,43 +9,43 @@ const GridCard = ({ idea }) => {
       className="bg-white border border-gray-300 rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-105 hover:border-black"
       onClick={() => navigate(`/idea/${idea.id}`)}
     >
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="text-xl font-bold text-gray-800 group-hover:text-black transition-colors line-clamp-2 leading-tight">
+      <div className="flex justify-between items-start mb-3 md:mb-4">
+        <h3 className="text-base md:text-xl font-bold text-gray-800 group-hover:text-black transition-colors line-clamp-2 leading-tight">
           {idea.title}
         </h3>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-2">
-          <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 md:w-5 md:h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </div>
       </div>
       
       {idea.description && (
-        <p className="text-gray-600 text-sm mb-5 line-clamp-3 leading-relaxed">
+        <p className="text-gray-600 text-xs md:text-sm mb-3 md:mb-5 line-clamp-2 md:line-clamp-3 leading-relaxed">
           {idea.description}
         </p>
       )}
       
       {idea.tags && idea.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-5">
+        <div className="flex flex-wrap gap-1 md:gap-2 mb-3 md:mb-5">
           {idea.tags.slice(0, 3).map((tag, index) => (
             <span
               key={index}
-              className="text-xs bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-medium border border-gray-300"
+              className="text-[10px] md:text-xs bg-gray-100 text-gray-800 px-2 md:px-3 py-0.5 md:py-1 rounded-full font-medium border border-gray-300"
             >
               #{tag}
             </span>
           ))}
           {idea.tags.length > 3 && (
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full border border-gray-200">
+            <span className="text-[10px] md:text-xs text-gray-500 bg-gray-100 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full border border-gray-200">
               +{idea.tags.length - 3} more
             </span>
           )}
         </div>
       )}
 
-      <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-        <span className="text-xs text-gray-500 font-medium">
+      <div className="flex justify-between items-center pt-2 md:pt-3 border-t border-gray-100">
+        <span className="text-[10px] md:text-xs text-gray-500 font-medium">
           {idea.createdAt ? new Date(idea.createdAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -58,7 +58,7 @@ const GridCard = ({ idea }) => {
             e.stopPropagation();
             navigate(`/idea/${idea.id}`);
           }}
-          className="px-4 py-2 bg-gradient-to-r from-orange-400 to-yellow-400 text-black text-sm rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-none transition-all duration-200 font-bold opacity-0 group-hover:opacity-100"
+          className="px-3 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-orange-400 to-yellow-400 text-black text-xs md:text-sm rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-none transition-all duration-200 font-bold opacity-0 group-hover:opacity-100"
         >
           View Details
         </button>
@@ -76,11 +76,11 @@ const ListItem = ({ idea }) => {
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-4 mb-3">
-            <h3 className="text-xl font-bold text-gray-800 group-hover:text-black transition-colors truncate">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-3">
+            <h3 className="text-lg md:text-xl font-bold text-gray-800 group-hover:text-black transition-colors truncate">
               {idea.title}
             </h3>
-            <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
+            <span className="hidden md:block text-xs text-gray-500 font-medium whitespace-nowrap">
               {idea.createdAt ? new Date(idea.createdAt).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
@@ -246,7 +246,7 @@ export default function IdeaList() {
 
       {/* Ideas Display */}
       {viewMode === 'grid' ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map(idea => (
             <GridCard key={idea.id} idea={idea} />
           ))}

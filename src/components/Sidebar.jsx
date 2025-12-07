@@ -152,10 +152,10 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
   return (
     <div 
       onClick={handleSidebarClick}
-      className={`sidebar-container transition-all duration-300 ease-in-out h-screen no-scrollbar
-        ${isCollapsed ? 'w-[10%] min-w-[40px] overflow-hidden' : 'w-[50%] overflow-y-auto'} 
+      className={`sidebar-container transition-all duration-300 ease-in-out h-full no-scrollbar
+        ${isCollapsed ? 'w-[50px] overflow-hidden' : 'w-[50%] max-w-[320px] overflow-y-auto'} 
         md:w-[320px] md:overflow-y-auto
-        bg-white shadow-[4px_0px_0px_0px_rgba(0,0,0,1)] relative border-r-2 border-black z-20
+        bg-white shadow-[4px_0px_0px_0px_rgba(0,0,0,1)] absolute md:relative border-r-2 border-black z-20
         ${isDragOver ? 'bg-blue-50 border-blue-400' : ''}
       `}
     >
@@ -236,12 +236,7 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
           </div>
         )}
 
-        <div className="mt-auto pt-4 p-3 bg-white border-2 border-black rounded-lg text-xs text-gray-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          <p className="font-bold mb-1">💡 Tips:</p>
-          <p className="md:hidden font-medium">• Tap sidebar to open/close</p>
-          <p className="md:hidden font-medium">• Drag card to canvas</p>
-          <p className="hidden md:block font-medium">• Drag ideas to canvas</p>
-        </div>
+        {/* Tips section removed as per user request */}
       </div>
     </div>
   );

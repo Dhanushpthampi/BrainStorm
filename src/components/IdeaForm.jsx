@@ -41,61 +41,8 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
   };
 
   const handleAthenaSuggest = async () => {
-    if (!idea.trim()) {
-      alert("Please enter an idea title first!");
-      return;
-    }
-
-    setIsLoadingSuggestion(true);
-    setAiSuggestion("");
-
-    try {
-      // Call Netlify function
-      const response = await fetch('/.netlify/functions/ai-suggest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentIdea: idea.trim(),
-          currentDescription: description.trim(),
-          allIdeas: ideas.map(i => ({
-            title: i.title,
-            description: i.description,
-            tags: i.tags
-          }))
-        })
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // Handle rate limit error specifically
-        if (response.status === 429) {
-          alert(`⚠️ Rate Limit Reached!\n\n${data.message || 'The free API tier has reached its limit. Please add credits to your OpenRouter account.'}`);
-          return;
-        }
-        throw new Error(data.error || `Server error: ${response.status}`);
-      }
-
-      setAiSuggestion(data.suggestion);
-      
-      // Auto-show description field and populate if empty
-      if (!showDescription) {
-        setShowDescription(true);
-      }
-      
-      // If description is empty, add the suggestion
-      if (!description.trim()) {
-        setDescription(data.suggestion);
-      }
-      
-    } catch (error) {
-      console.error('AI suggestion error:', error);
-      alert('Failed to get AI suggestion. Please try again.');
-    } finally {
-      setIsLoadingSuggestion(false);
-    }
+    alert("Coming Soon!");
+    return;
   };
 
   const handleSubmit = async (e) => {

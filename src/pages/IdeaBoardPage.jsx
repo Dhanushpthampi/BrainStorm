@@ -121,7 +121,7 @@ export default function IdeaBoardPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-[calc(100vh-80px)] overflow-hidden">
       <Sidebar
         ideas={sidebarIdeas}
         onDragStart={(e, id) => {
