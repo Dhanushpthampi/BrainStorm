@@ -153,7 +153,7 @@ export default function Sidebar({ ideas, onDragStart, onMapChange, onCardClick }
     <div 
       onClick={handleSidebarClick}
       className={`sidebar-container transition-all duration-300 ease-in-out h-full no-scrollbar
-        ${isCollapsed ? 'w-[15%] min-w-[50px] overflow-hidden' : 'w-[50%] max-w-[320px] overflow-y-auto'} 
+        ${isCollapsed ? 'w-[8%] min-w-[50px] overflow-hidden' : 'w-[50%] max-w-[320px] overflow-y-auto'} 
         md:w-[320px] md:overflow-y-auto
         bg-white shadow-[4px_0px_0px_0px_rgba(0,0,0,1)] absolute md:relative border-r-2 border-black z-20
         ${isDragOver ? 'bg-blue-50 border-blue-400' : ''}

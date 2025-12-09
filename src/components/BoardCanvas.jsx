@@ -11,6 +11,7 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
   
   const [showLinkPopup, setShowLinkPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [showInstructions, setShowInstructions] = useState(true);
 
   // Card dimensions
   const CARD_WIDTH = 200;
@@ -187,7 +188,7 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
       }}
     >
       {/* Zoom Controls */}
-      <div className="absolute top-4 right-4 z-50 flex flex-col gap-2 bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-2">
+      <div className="absolute top-20 right-4 z-50 flex flex-col gap-2 bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-2">
         <button onClick={zoomIn} className="w-8 h-8 bg-black text-white rounded text-lg font-bold flex items-center justify-center hover:bg-gray-800 transition-colors active:translate-y-0.5">+</button>
         <div className="text-xs text-center font-bold text-gray-800 px-1">{Math.round(zoom * 100)}%</div>
         <button onClick={zoomOut} className="w-8 h-8 bg-black text-white rounded text-lg font-bold flex items-center justify-center hover:bg-gray-800 transition-colors active:translate-y-0.5">−</button>
@@ -270,13 +271,23 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
         </div>
       )}
 
-      {/* Instructions */}
-      <div className="absolute bottom-4 left-4 p-3 text-sm bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-gray-800 max-w-xs">
-        <p className="font-bold mb-1">How to use:</p>
-        <p>• Drag cards from sidebar to canvas</p>
-        <p>• Select 2 cards to link/unlink</p>
-        <p>• <span className="font-bold text-blue-600">Drag over sidebar to remove</span></p>
-        <p>• <span className="font-bold text-green-600">Ctrl + Scroll to zoom, Alt + Drag to pan</span></p>
+      {/* Instructions - Collapsible */}
+      <div className="absolute bottom-20 left-[calc(8%+1rem)] md:left-4 bg-white rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-xs overflow-hidden">
+        <button
+          onClick={() => setShowInstructions(!showInstructions)}
+          className="w-full flex items-center justify-between p-3 font-bold text-gray-800 hover:bg-gray-50 transition-colors"
+        >
+          <span className="text-sm">💡 How to use</span>
+          <span className="text-xs">{showInstructions ? '▼' : '▶'}</span>
+        </button>
+        {showInstructions && (
+          <div className="px-3 pb-3 text-sm text-gray-800 space-y-1">
+            <p>• Drag cards from sidebar to canvas</p>
+            <p>• Select 2 cards to link/unlink</p>
+            <p>• <span className="font-bold text-blue-600">Drag over sidebar to remove</span></p>
+            <p>• <span className="font-bold text-green-600">Ctrl + Scroll to zoom, Alt + Drag to pan</span></p>
+          </div>
+        )}
       </div>
     </div>
   );

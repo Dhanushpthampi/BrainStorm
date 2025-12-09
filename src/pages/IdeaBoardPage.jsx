@@ -121,56 +121,58 @@ export default function IdeaBoardPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-80px)] overflow-hidden">
-      <Sidebar
-        ideas={sidebarIdeas}
-        onDragStart={(e, id) => {
-          e.dataTransfer.setData("ideaId", id);
-          e.dataTransfer.effectAllowed = "move";
-        }}
-        onCardClick={(id) => {
-          const x = 150 + Math.random() * 50;
-          const y = 150 + Math.random() * 50;
-          
-          setIdeas(prev => 
-            prev.map(idea => 
-              idea.id === id 
-                ? { ...idea, x, y } 
-                : idea
-            )
-          );
-        }}
-      />
-      <div 
-        className="flex-1 relative board-canvas-container"
-        onDrop={handleDrop} 
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = "move";
-        }}
-      >
-        <BoardCanvas
-          ideas={ideas || []}
-          setIdeas={setIdeas}
-          mapId={mapId}
-          onCanvasClick={handleCanvasClick}
+    <div className="fixed inset-0 top-[80px]">
+      <div className="flex h-full overflow-hidden">
+        <Sidebar
+          ideas={sidebarIdeas}
+          onDragStart={(e, id) => {
+            e.dataTransfer.setData("ideaId", id);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onCardClick={(id) => {
+            const x = 150 + Math.random() * 50;
+            const y = 150 + Math.random() * 50;
+            
+            setIdeas(prev => 
+              prev.map(idea => 
+                idea.id === id 
+                  ? { ...idea, x, y } 
+                  : idea
+              )
+            );
+          }}
         />
-        
-        {/* Dragging ghost from sidebar */}
-        {draggingFromSidebar && (
-          <div 
-            className="fixed pointer-events-none z-50 bg-white p-3 rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-[200px] opacity-90"
-            style={{ 
-              left: draggingFromSidebar.x - 100, 
-              top: draggingFromSidebar.y - 30,
-              transform: 'rotate(3deg)'
-            }}
-          >
-            <strong className="text-black block truncate font-bold">
-              {(ideas || []).find(i => i.id === draggingFromSidebar.id)?.title}
-            </strong>
-          </div>
-        )}
+        <div 
+          className="flex-1 relative board-canvas-container"
+          onDrop={handleDrop} 
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+          }}
+        >
+          <BoardCanvas
+            ideas={ideas || []}
+            setIdeas={setIdeas}
+            mapId={mapId}
+            onCanvasClick={handleCanvasClick}
+          />
+          
+          {/* Dragging ghost from sidebar */}
+          {draggingFromSidebar && (
+            <div 
+              className="fixed pointer-events-none z-50 bg-white p-3 rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-[200px] opacity-90"
+              style={{ 
+                left: draggingFromSidebar.x - 100, 
+                top: draggingFromSidebar.y - 30,
+                transform: 'rotate(3deg)'
+              }}
+            >
+              <strong className="text-black block truncate font-bold">
+                {(ideas || []).find(i => i.id === draggingFromSidebar.id)?.title}
+              </strong>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
