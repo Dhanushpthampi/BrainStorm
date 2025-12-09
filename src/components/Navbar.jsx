@@ -33,7 +33,7 @@ const Navbar = () => {
           {/* Mobile Menu Button */}
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-yellow-200 focus:outline-none"
+            className="md:hidden p-2 rounded-lg hover:bg-yellow-200 focus:outline-none z-50 relative"
           >
             <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isOpen ? (
@@ -44,29 +44,29 @@ const Navbar = () => {
             </svg>
           </button>
         </div>
-      </div>
 
-      {/* Mobile Menu Dropdown - Absolute positioned overlay */}
-      {isOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-yellow-100 border-b-2 border-black shadow-lg animate-fadeIn z-40">
-          <div className="max-w-6xl mx-auto px-4 py-4 space-y-2">
-            <Link 
-              to="/board" 
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors font-bold px-4 py-3 rounded-lg hover:bg-blue-50 bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-            >
-              <span>🎯</span> Idea Board
-            </Link>
-            <Link 
-              to="/archive"
-              onClick={() => setIsOpen(false)} 
-              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors font-bold px-4 py-3 rounded-lg hover:bg-blue-50 bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-            >
-              <span>📁</span> Archive
-            </Link>
+        {/* Mobile Menu Dropdown - Absolute positioned overlay */}
+        {isOpen && (
+          <div className="md:hidden absolute left-0 right-0 top-full bg-yellow-100 border-b border-black-900 shadow-lg animate-fadeIn z-40">
+            <div className="max-w-6xl mx-auto px-4 py-4 space-y-2">
+              <Link 
+                to="/board" 
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors font-bold px-4 py-3 rounded-lg hover:bg-blue-50 bg-white/50"
+              >
+                <span>🎯</span> Idea Board
+              </Link>
+              <Link 
+                to="/archive"
+                onClick={() => setIsOpen(false)} 
+                className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors font-bold px-4 py-3 rounded-lg hover:bg-blue-50 bg-white/50"
+              >
+                <span>📁</span> Archive
+              </Link>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   )
 }

@@ -183,7 +183,7 @@ export default function IdeaList() {
             </button>
           ) : (
             <button
-              onClick={() => navigate('/add')}
+              onClick={() => navigate('/', { state: { scrollToForm: true } })}
               className="px-6 py-3 bg-gradient-to-r from-orange-400 to-yellow-400 text-black rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all duration-200 font-bold"
             >
               Add Your First Idea
