@@ -50,20 +50,31 @@ export const saveMaps = (maps) => {
 // 🔹 Migration: Convert legacy map-bound ideas to global library
 const migrateToGlobalLibrary = () => {
   try {
+    // Check if migration has already been completed using a flag
+    const migrationCompleted = localStorage.getItem('brainstorm-migration-completed');
+    if (migrationCompleted === 'true') {
+      return;
+    }
+    
     const globalIdeas = getGlobalIdeas();
     const maps = getMaps();
+    const legacyIdeas = JSON.parse(localStorage.getItem('ideas') || '[]');
     
-    // If we already have global ideas and maps have 'nodes' property, assume migrated
-    const isMigrated = globalIdeas.length > 0 || Object.values(maps).some(m => m.nodes);
+    // Check if there's actually any legacy data to migrate
+    const hasLegacyData = legacyIdeas.length > 0 || 
+                          Object.values(maps).some(m => Array.isArray(m.ideas));
     
-    if (isMigrated && globalIdeas.length > 0) return;
+    // If no legacy data exists, mark as migrated and return
+    if (!hasLegacyData) {
+      localStorage.setItem('brainstorm-migration-completed', 'true');
+      return;
+    }
 
     console.log('Migrating to global idea library...');
     
     const allIdeasMap = new Map();
     
     // 1. Collect ideas from legacy 'ideas' key if exists
-    const legacyIdeas = JSON.parse(localStorage.getItem('ideas') || '[]');
     legacyIdeas.forEach(idea => {
       if (!allIdeasMap.has(idea.id)) {
         // Strip position data for global store
@@ -94,12 +105,18 @@ const migrateToGlobalLibrary = () => {
       }
     });
 
-    // 3. Save Global Ideas
-    saveGlobalIdeas(Array.from(allIdeasMap.values()));
+    // 3. Save Global Ideas (only if we have any)
+    if (allIdeasMap.size > 0) {
+      saveGlobalIdeas(Array.from(allIdeasMap.values()));
+    }
     
     // 4. Save Updated Maps
-    saveMaps(maps);
+    if (Object.keys(maps).length > 0) {
+      saveMaps(maps);
+    }
     
+    // Mark migration as completed
+    localStorage.setItem('brainstorm-migration-completed', 'true');
     console.log('Migration completed successfully.');
   } catch (error) {
     console.error('Error during migration:', error);

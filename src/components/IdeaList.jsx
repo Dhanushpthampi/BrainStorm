@@ -139,8 +139,8 @@ export default function IdeaList() {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   const filtered = selectedTag
-    ? ideas.filter(idea => !idea.archived && idea.tags && idea.tags.includes(selectedTag))
-    : ideas.filter(idea => !idea.archived);
+    ? (ideas || []).filter(idea => !idea.archived && idea.tags && idea.tags.includes(selectedTag))
+    : (ideas || []).filter(idea => !idea.archived);
 
   if (loading) {
     return (

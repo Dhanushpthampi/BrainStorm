@@ -117,14 +117,8 @@ export default function MapManager({ onMapChange }) {
 
   return (
     <div className="border-b border-gray-200 pb-4 mb-4">
-      {/* Current Map Display */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-bold text-gray-700">📊 Current Map:</span>
-          <span className="text-sm font-bold text-black border-b-2 border-yellow-400">
-            {maps[activeMapId]?.name || 'Default Map'}
-          </span>
-        </div>
+      {/* New Map Button */}
+      <div className="flex items-center justify-end mb-3">
         <button
           onClick={() => setShowCreateModal(true)}
           className="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full transition-colors font-bold border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
@@ -155,15 +149,15 @@ export default function MapManager({ onMapChange }) {
               </div>
             </button>
             
-            {mapId !== 'default-map' && (
-              <div className="flex items-center space-x-1 ml-2">
-                <button
-                  onClick={() => startRename(mapId, map.name)}
-                  className="text-gray-400 hover:text-black p-1"
-                  title="Rename map"
-                >
-                  ✏️
-                </button>
+            <div className="flex items-center space-x-1 ml-2">
+              <button
+                onClick={() => startRename(mapId, map.name)}
+                className="text-gray-400 hover:text-black p-1"
+                title="Rename map"
+              >
+                ✏️
+              </button>
+              {mapId !== 'default-map' && (
                 <button
                   onClick={() => handleDeleteMap(mapId)}
                   className="text-gray-400 hover:text-red-500 p-1"
@@ -171,8 +165,8 @@ export default function MapManager({ onMapChange }) {
                 >
                   🗑️
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ))}
       </div>

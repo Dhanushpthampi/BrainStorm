@@ -142,7 +142,7 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
         const screenY = e.clientY - rect.top - 40;
         const canvasCoords = screenToCanvas(screenX, screenY);
         
-        const unplacedIdea = ideas.find(idea => 
+        const unplacedIdea = (ideas || []).find(idea => 
           (idea.x === undefined || idea.x === null) && 
           !idea.archived
         );
@@ -238,7 +238,7 @@ export default function BoardCanvas({ ideas, setIdeas, mapId, onCanvasClick }) {
         </svg>
 
         {/* Ideas */}
-        {ideas
+        {(ideas || [])
           .filter((idea) => idea.x !== undefined && idea.y !== undefined)
           .map((idea) => (
             <IdeaCard

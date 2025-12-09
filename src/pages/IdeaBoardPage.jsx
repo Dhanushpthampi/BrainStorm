@@ -89,7 +89,7 @@ export default function IdeaBoardPage() {
     const x = e.clientX - canvasRect.left - 100;
     const y = e.clientY - canvasRect.top - 40;
     
-    const unplacedIdea = ideas.find(idea => 
+    const unplacedIdea = (ideas || []).find(idea => 
       (idea.x === undefined || idea.x === null) && 
       (idea.y === undefined || idea.y === null) && 
       !idea.archived
@@ -106,9 +106,9 @@ export default function IdeaBoardPage() {
     }
   };
 
-  const sidebarIdeas = ideas.filter((idea) => 
+  const sidebarIdeas = (ideas || []).filter((idea) => 
     (idea.x === undefined || idea.x === null) && 
-    (idea.y === undefined || idea.y === null) && 
+    (idea.y === undefined || idea.y === null) &&
     !idea.archived
   );
 
@@ -150,7 +150,7 @@ export default function IdeaBoardPage() {
         }}
       >
         <BoardCanvas
-          ideas={ideas}
+          ideas={ideas || []}
           setIdeas={setIdeas}
           mapId={mapId}
           onCanvasClick={handleCanvasClick}
@@ -167,7 +167,7 @@ export default function IdeaBoardPage() {
             }}
           >
             <strong className="text-black block truncate font-bold">
-              {ideas.find(i => i.id === draggingFromSidebar.id)?.title}
+              {(ideas || []).find(i => i.id === draggingFromSidebar.id)?.title}
             </strong>
           </div>
         )}
