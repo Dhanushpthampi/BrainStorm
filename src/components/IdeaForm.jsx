@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { useIdeas } from "../context/IdeasContext";
+import { getSuggestion } from "../utils/geminiService";
 
 export default function IdeaForm({ editMode = false, existingIdea = null, onIdeaAdded }) {
   const { addIdea, updateIdea, ideas } = useIdeas();
@@ -41,8 +42,33 @@ export default function IdeaForm({ editMode = false, existingIdea = null, onIdea
   };
 
   const handleAthenaSuggest = async () => {
-    alert("Coming Soon!");
-    return;
+    if (!idea.trim()) {
+      alert("Please enter an idea first!");
+      return;
+    }
+
+    setIsLoadingSuggestion(true);
+    setAiSuggestion(""); // Clear previous suggestion
+
+    try {
+      const suggestion = await getSuggestion(idea);
+      
+      // Append suggestion to description
+      setDescription(prev => {
+        const trimmed = prev.trim();
+        return trimmed ? trimmed + "\n\n" + suggestion : suggestion;
+      });
+      
+      // Automatically show the description field when suggestion arrives
+      if (!showDescription) {
+        setShowDescription(true);
+      }
+    } catch (error) {
+      console.error('Failed to get AI suggestion:', error);
+      alert(error.message || 'Failed to get AI suggestion. Please try again.' ,error);
+    } finally {
+      setIsLoadingSuggestion(false);
+    }
   };
 
   const handleSubmit = async (e) => {
